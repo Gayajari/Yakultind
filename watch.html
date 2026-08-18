@@ -90,7 +90,6 @@
       <h1>${escapeHtml(post.judul)}</h1>
       <div class="watch-meta">
         <span>Dipublikasikan ${fmtDate(post.dibuat_pada)}</span>
-        ${typeof post.views === 'number' ? `<span>${post.views} dilihat</span>` : ''}
       </div>
       <div class="watch-actions">
         <a class="btn-pill" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer">Buka Link</a>
@@ -99,9 +98,21 @@
       <div class="bar-slots watch-link-bar" id="watch-link-bar" style="padding-left:0; padding-right:0;"></div>
     `;
 
-    sb.rpc('increment_views', { post_id: id }).then(() => {}).catch(() => {});
+    trackView(id);
     loadWatchLinkBar();
     loadRelated(id);
+  }
+
+  /* ---------- View counter dengan cooldown 30 menit per post per browser ---------- */
+  const VIEW_COOLDOWN_MS = 30 * 60 * 1000; // 30 menit
+  function trackView(id){
+    try{
+      const key = 'yk_viewed_' + id;
+      const last = Number(localStorage.getItem(key) || 0);
+      if(Date.now() - last < VIEW_COOLDOWN_MS) return; // masih dalam masa cooldown, jangan hitung lagi
+      localStorage.setItem(key, String(Date.now()));
+    } catch(e){ /* localStorage diblokir — tetap hitung, lebih baik daripada gagal total */ }
+    sb.rpc('increment_views', { post_id: id }).then(() => {}).catch(() => {});
   }
 
   async function loadRelated(currentId){
