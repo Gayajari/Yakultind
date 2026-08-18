@@ -43,13 +43,32 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
+  const DEFAULT_PRIVACY = `Kebijakan Privasi ini menjelaskan bagaimana Yakultind mengelola informasi pengunjung.
+
+1. Data yang Dikumpulkan
+Kami tidak meminta pendaftaran akun untuk mengakses konten. Data yang mungkin tercatat secara otomatis meliputi log kunjungan standar (seperti alamat IP, jenis perangkat, dan waktu akses) untuk keperluan keamanan dan analitik dasar.
+
+2. Cookie
+Situs ini dapat menggunakan cookie sederhana untuk menyimpan preferensi tampilan dan mengurangi penghitungan kunjungan ganda. Cookie ini tidak digunakan untuk melacak identitas pribadi.
+
+3. Data dari Formulir Kontak
+Jika kamu menghubungi kami melalui tautan yang tersedia, informasi yang kamu kirimkan hanya digunakan untuk membalas keperluanmu dan tidak dibagikan ke pihak ketiga tanpa izin.
+
+4. Pihak Ketiga
+Situs ini dapat menggunakan layanan pihak ketiga (seperti penyedia hosting) yang memiliki kebijakan privasi masing-masing.
+
+5. Perubahan Kebijakan
+Kebijakan ini dapat diperbarui sewaktu-waktu. Perubahan akan berlaku sejak dipublikasikan di halaman ini.
+
+Jika ada pertanyaan seputar privasi, silakan hubungi kami melalui halaman Kontak.`;
+
   async function loadStaticContent(){
     const el = document.getElementById('page-content');
     try{
       const { data, error } = await sb.from('site_settings').select('footer_privacy').eq('id', 1).single();
       if(error) throw error;
       const text = data && data.footer_privacy;
-      el.textContent = text && text.trim() ? text : 'Konten belum diisi oleh admin.';
+      el.textContent = text && text.trim() ? text : DEFAULT_PRIVACY;
     } catch(err){
       el.innerHTML = errorStateHtml('loadStaticContent');
     }

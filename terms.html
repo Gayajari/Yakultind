@@ -43,13 +43,35 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
+  const DEFAULT_TERMS = `Dengan mengakses dan menggunakan Yakultind, kamu dianggap menyetujui syarat dan ketentuan berikut.
+
+1. Batasan Usia
+Sebagian konten di situs ini ditujukan untuk pengguna dewasa. Dengan mengakses situs ini, kamu menyatakan telah berusia 18 tahun atau lebih, atau usia dewasa yang berlaku di wilayahmu.
+
+2. Penggunaan Konten
+Seluruh konten disediakan untuk keperluan informasi dan hiburan pribadi. Dilarang menyalin, menyebarluaskan ulang, atau menggunakan konten situs ini untuk tujuan komersial tanpa izin dari pemilik hak terkait.
+
+3. Perilaku Pengguna
+Pengguna dilarang menyalahgunakan situs ini untuk tindakan yang melanggar hukum, termasuk namun tidak terbatas pada penyebaran konten ilegal, pelecehan, atau pelanggaran hak orang lain.
+
+4. Perubahan Layanan
+Kami berhak mengubah, menghentikan sementara, atau menghentikan sebagian maupun seluruh layanan tanpa pemberitahuan sebelumnya.
+
+5. Batasan Tanggung Jawab
+Situs ini disediakan "sebagaimana adanya". Kami tidak bertanggung jawab atas kerugian yang timbul dari penggunaan situs ini, termasuk gangguan teknis atau konten yang bersumber dari pihak ketiga.
+
+6. Hukum yang Berlaku
+Syarat dan ketentuan ini tunduk pada hukum yang berlaku di wilayah tempat situs ini dioperasikan.
+
+Dengan terus menggunakan situs ini, kamu dianggap telah membaca dan menyetujui seluruh ketentuan di atas.`;
+
   async function loadStaticContent(){
     const el = document.getElementById('page-content');
     try{
       const { data, error } = await sb.from('site_settings').select('footer_terms').eq('id', 1).single();
       if(error) throw error;
       const text = data && data.footer_terms;
-      el.textContent = text && text.trim() ? text : 'Konten belum diisi oleh admin.';
+      el.textContent = text && text.trim() ? text : DEFAULT_TERMS;
     } catch(err){
       el.innerHTML = errorStateHtml('loadStaticContent');
     }
