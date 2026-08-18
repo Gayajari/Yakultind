@@ -47,25 +47,21 @@
     const el = document.getElementById('page-content');
     try{
       const { data, error } = await sb.from('site_settings')
-        .select('footer_kontak, bar1_nama, bar1_link, bar2_nama, bar2_link, bar3_nama, bar3_link')
+        .select('kontak_bar1_nama, kontak_bar1_link, kontak_bar2_nama, kontak_bar2_link, kontak_bar3_nama, kontak_bar3_link')
         .eq('id', 1).single();
       if(error) throw error;
-      const custom = data && data.footer_kontak;
-      if(custom && custom.trim()){
-        el.textContent = custom;
-      } else {
-        const socialLinks = [
-          { nama: data && data.bar1_nama, link: data && data.bar1_link },
-          { nama: data && data.bar2_nama, link: data && data.bar2_link },
-          { nama: data && data.bar3_nama, link: data && data.bar3_link }
-        ].filter(b => b.nama && b.link);
-        let text = 'Ada pertanyaan, saran, kerja sama, atau ingin melaporkan konten? Silakan hubungi kami melalui:\n\n';
-        text += socialLinks.length
-          ? socialLinks.map(b => `${b.nama}: ${b.link}`).join('\n')
-          : 'Tombol yang tersedia di bagian atas halaman.';
-        text += '\n\nKami berusaha membalas pesan dalam 1–3 hari kerja. Untuk laporan pelanggaran hak cipta, silakan baca halaman DMCA kami.';
-        el.textContent = text;
-      }
+
+      const slots = [
+        { nama: data && data.kontak_bar1_nama, link: data && data.kontak_bar1_link },
+        { nama: data && data.kontak_bar2_nama, link: data && data.kontak_bar2_link },
+        { nama: data && data.kontak_bar3_nama, link: data && data.kontak_bar3_link }
+      ].filter(s => s.nama && s.link);
+
+      el.innerHTML = slots.length
+        ? `<div style="display:flex; flex-wrap:wrap; gap:12px;">${slots.map(s =>
+            `<a class="btn-pill" href="${escapeHtml(s.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.nama)}</a>`
+          ).join('')}</div>`
+        : '<div class="empty" style="padding:0;">Kontak belum diatur oleh admin.</div>';
     } catch(err){
       el.innerHTML = errorStateHtml('loadStaticContent');
     }
