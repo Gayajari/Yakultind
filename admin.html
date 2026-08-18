@@ -177,9 +177,12 @@
     <section class="section" id="tab-bars">
       <div class="panel">
         <h2>Favicon</h2>
-        <p class="hint">Ikon kecil yang tampil di tab browser. Isi dengan URL gambar (bisa upload dulu ke Supabase Storage lalu tempel link publiknya di sini).</p>
+        <p class="hint">Ikon kecil yang tampil di tab browser. Upload 1 gambar (disarankan PNG persegi, misal 512x512) — otomatis dipakai di semua halaman.</p>
         <form id="favicon-form">
-          <div class="field"><label>URL Favicon</label><input type="url" id="favicon_url" placeholder="https://…/favicon.png"></div>
+          <div id="favicon-preview-wrap" style="display:none; margin-bottom:14px;">
+            <img id="favicon-preview" src="" alt="Favicon saat ini" style="width:48px; height:48px; border-radius:10px; border:1.5px solid var(--line); object-fit:cover;">
+          </div>
+          <div class="field"><label>Upload gambar favicon</label><input type="file" id="favicon_file" accept="image/png,image/jpeg,image/x-icon,image/svg+xml"></div>
           <button class="btn-primary" type="submit">Simpan favicon</button>
           <div id="favicon-status"></div>
         </form>
@@ -478,11 +481,16 @@
   }
 
   /* ---------- FAVICON SETTINGS ---------- */
+  let currentFaviconUrl = '';
   async function loadFavicon(){
     const { data } = await sb.from('site_settings').select('favicon_url').eq('id', 1).single();
     if(!data) return;
-    document.getElementById('favicon_url').value = data.favicon_url || '';
-    if(data.favicon_url) setDashboardFavicon(data.favicon_url);
+    currentFaviconUrl = data.favicon_url || '';
+    if(currentFaviconUrl){
+      document.getElementById('favicon-preview').src = currentFaviconUrl;
+      document.getElementById('favicon-preview-wrap').style.display = 'block';
+      setDashboardFavicon(currentFaviconUrl);
+    }
   }
   function setDashboardFavicon(url){
     let link = document.querySelector('link[rel="icon"]');
@@ -492,11 +500,29 @@
   document.getElementById('favicon-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const status = document.getElementById('favicon-status');
-    const url = document.getElementById('favicon_url').value.trim();
-    const { error } = await sb.from('site_settings').update({ favicon_url: url }).eq('id', 1);
-    status.style.display = 'block';
-    if(error){ status.textContent = 'Gagal menyimpan: kolom favicon_url mungkin belum ada di tabel site_settings. ' + error.message; status.className = 'err'; }
-    else { status.textContent = 'Tersimpan.'; status.className = 'ok'; showToast('Favicon diperbarui'); if(url) setDashboardFavicon(url); }
+    const fileInput = document.getElementById('favicon_file');
+    const file = fileInput.files[0];
+    if(!file){ status.style.display = 'block'; status.textContent = 'Pilih gambar dulu.'; status.className = 'err'; return; }
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true; submitBtn.textContent = 'Mengupload…';
+    try{
+      const url = await uploadPhoto(file);
+      const { error } = await sb.from('site_settings').update({ favicon_url: url }).eq('id', 1);
+      if(error) throw error;
+      currentFaviconUrl = url;
+      document.getElementById('favicon-preview').src = url;
+      document.getElementById('favicon-preview-wrap').style.display = 'block';
+      setDashboardFavicon(url);
+      fileInput.value = '';
+      status.style.display = 'block'; status.textContent = 'Tersimpan.'; status.className = 'ok';
+      showToast('Favicon diperbarui');
+    } catch(err){
+      status.style.display = 'block';
+      status.textContent = 'Gagal menyimpan: kolom favicon_url mungkin belum ada di tabel site_settings. ' + err.message;
+      status.className = 'err';
+    } finally {
+      submitBtn.disabled = false; submitBtn.textContent = 'Simpan favicon';
+    }
   });
 
   /* ---------- BAR HEADER SETTINGS ---------- */
