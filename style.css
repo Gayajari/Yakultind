@@ -33,19 +33,19 @@ img{max-width:100%;}
   border-bottom:1px solid var(--line);
 }
 .header-top{
-  display:flex; align-items:center; gap:12px;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px;
   padding:14px 20px;
   max-width:1120px; margin:0 auto;
 }
 .logo{
   font-family:'Fraunces',serif; font-weight:700; font-size:21px;
-  flex-shrink:0;
   white-space:nowrap;
-  margin-right:auto;
+  justify-self:center;
 }
 .logo em{ font-style:italic; font-weight:400; color:var(--raspberry); }
 
-.header-actions{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.header-top .home-btn{ justify-self:start; }
+.header-top #search-toggle{ justify-self:end; }
 .icon-round{
   display:flex; align-items:center; justify-content:center;
   width:38px; height:38px; border-radius:50%;
