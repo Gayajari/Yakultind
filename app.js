@@ -153,29 +153,13 @@ function loadWatchLinkBar(){
 }
 
 /* ==========================================================
-   NAVIGASI: ← Kembali + Home (satu baris, di bawah header saja)
+   NAVIGASI: dihapus sesuai permintaan (tombol Kembali & Home
+   di bawah header tidak lagi ditampilkan)
    ========================================================== */
 function renderNav(){
   const el = document.getElementById('nav-row');
   if(!el) return;
-  el.innerHTML = `
-    <a href="#" class="nav-btn" id="back-btn">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      Kembali
-    </a>
-    <a href="index.html" class="nav-btn">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
-      Home
-    </a>`;
-  document.getElementById('back-btn').addEventListener('click', goBack);
-}
-function goBack(e){
-  if(e) e.preventDefault();
-  if(document.referrer && document.referrer.includes(window.location.host)){
-    window.history.back();
-  } else {
-    window.location.href = 'index.html';
-  }
+  el.innerHTML = '';
 }
 
 /* ---------- Footer ---------- */
@@ -185,13 +169,8 @@ function renderFooter(){
   el.innerHTML = `
     <footer class="site-footer">
       <div class="footer-inner">
-        <a href="index.html" class="footer-back">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          Yakultind
-        </a>
         <div class="footer-brand">Yakult<em>ind</em></div>
         <nav class="footer-links">
-          <a href="index.html">Beranda</a>
           <a href="kontak.html">Kontak</a>
           <a href="privacy.html">Privacy Policy</a>
           <a href="terms.html">Terms</a>
