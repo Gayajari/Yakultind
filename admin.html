@@ -176,6 +176,16 @@
     <!-- ===== TAB: BAR HEADER ===== -->
     <section class="section" id="tab-bars">
       <div class="panel">
+        <h2>Favicon</h2>
+        <p class="hint">Ikon kecil yang tampil di tab browser. Isi dengan URL gambar (bisa upload dulu ke Supabase Storage lalu tempel link publiknya di sini).</p>
+        <form id="favicon-form">
+          <div class="field"><label>URL Favicon</label><input type="url" id="favicon_url" placeholder="https://…/favicon.png"></div>
+          <button class="btn-primary" type="submit">Simpan favicon</button>
+          <div id="favicon-status"></div>
+        </form>
+      </div>
+
+      <div class="panel">
         <h2>3 slot link sosmed di header</h2>
         <p class="hint">Nama & link tiap slot tampil di header semua halaman, lengkap dengan ikon otomatis kalau namanya mengandung "WA/WhatsApp", "Telegram", atau "Discord". Kosongkan nama untuk sembunyikan slot.</p>
         <form id="bars-form">
@@ -228,6 +238,7 @@
           <div class="field"><label>Privacy Policy</label><textarea id="footer_privacy" placeholder="Kebijakan privasi…"></textarea></div>
           <div class="field"><label>Terms</label><textarea id="footer_terms" placeholder="Syarat & ketentuan…"></textarea></div>
           <div class="field"><label>Disclaimer</label><textarea id="footer_disclaimer" placeholder="Sangkalan…"></textarea></div>
+          <div class="field"><label>DMCA</label><textarea id="footer_dmca" placeholder="Kebijakan DMCA…"></textarea></div>
           <button class="btn-primary" type="submit">Simpan halaman footer</button>
           <div id="footer-status"></div>
         </form>
@@ -285,6 +296,7 @@
     loadPosts();
     loadBars();
     loadFooter();
+    loadFavicon();
   }
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -465,6 +477,28 @@
     });
   }
 
+  /* ---------- FAVICON SETTINGS ---------- */
+  async function loadFavicon(){
+    const { data } = await sb.from('site_settings').select('favicon_url').eq('id', 1).single();
+    if(!data) return;
+    document.getElementById('favicon_url').value = data.favicon_url || '';
+    if(data.favicon_url) setDashboardFavicon(data.favicon_url);
+  }
+  function setDashboardFavicon(url){
+    let link = document.querySelector('link[rel="icon"]');
+    if(!link){ link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+    link.href = url;
+  }
+  document.getElementById('favicon-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const status = document.getElementById('favicon-status');
+    const url = document.getElementById('favicon_url').value.trim();
+    const { error } = await sb.from('site_settings').update({ favicon_url: url }).eq('id', 1);
+    status.style.display = 'block';
+    if(error){ status.textContent = 'Gagal menyimpan: kolom favicon_url mungkin belum ada di tabel site_settings. ' + error.message; status.className = 'err'; }
+    else { status.textContent = 'Tersimpan.'; status.className = 'ok'; showToast('Favicon diperbarui'); if(url) setDashboardFavicon(url); }
+  });
+
   /* ---------- BAR HEADER SETTINGS ---------- */
   async function loadBars(){
     const { data } = await sb.from('site_settings').select('*').eq('id', 1).single();
@@ -507,7 +541,7 @@
   async function loadFooter(){
     const { data } = await sb.from('site_settings').select('*').eq('id', 1).single();
     if(!data) return;
-    ['footer_kontak','footer_privacy','footer_terms','footer_disclaimer'].forEach(key => {
+    ['footer_kontak','footer_privacy','footer_terms','footer_disclaimer','footer_dmca'].forEach(key => {
       document.getElementById(key).value = data[key] || '';
     });
   }
@@ -515,7 +549,7 @@
     e.preventDefault();
     const status = document.getElementById('footer-status');
     const payload = {};
-    ['footer_kontak','footer_privacy','footer_terms','footer_disclaimer'].forEach(key => {
+    ['footer_kontak','footer_privacy','footer_terms','footer_disclaimer','footer_dmca'].forEach(key => {
       payload[key] = document.getElementById(key).value;
     });
     const { error } = await sb.from('site_settings').update(payload).eq('id', 1);

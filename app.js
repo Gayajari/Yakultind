@@ -142,6 +142,19 @@ function initHeader(){
   }
 }
 
+/* ---------- Favicon dinamis dari dashboard (site_settings.favicon_url) ---------- */
+function applyFavicon(){
+  sb.from('site_settings').select('favicon_url').eq('id', 1).single().then(({ data }) => {
+    if(!data || !data.favicon_url) return;
+    let link = document.querySelector('link[rel="icon"]');
+    if(!link){
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = data.favicon_url;
+  }).catch(() => {});
+}
 /* ---------- Bar link khusus watch page — dipanggil manual SETELAH konten post
    dirender, karena elemen mount-nya baru ada di DOM saat itu ---------- */
 function loadWatchLinkBar(){
@@ -175,6 +188,7 @@ function renderFooter(){
           <a href="privacy.html">Privacy Policy</a>
           <a href="terms.html">Terms</a>
           <a href="disclaimer.html">Disclaimer</a>
+          <a href="dmca.html">DMCA</a>
         </nav>
       </div>
       <div class="footer-bottom">&copy; ${new Date().getFullYear()} Yakultind. Semua hak dilindungi.</div>
@@ -269,4 +283,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeader();
   renderNav();
   renderFooter();
+  applyFavicon();
 });

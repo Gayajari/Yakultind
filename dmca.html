@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Terms — Yakultind</title>
-<meta name="description" content="Syarat dan ketentuan penggunaan situs Yakultind.">
+<title>DMCA — Yakultind</title>
+<meta name="description" content="Kebijakan DMCA dan prosedur pengaduan hak cipta Yakultind.">
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="style.css">
@@ -34,7 +34,7 @@
 <div class="nav-row" id="nav-row"></div>
 
 <main class="static-page">
-  <h1>Terms</h1>
+  <h1>DMCA</h1>
   <div class="content" id="page-content"><div class="skel-line w1" style="height:15px;"></div><div class="skel-line" style="margin:14px 0;"></div><div class="skel-line w2" style="margin-left:0;"></div></div>
 </main>
 
@@ -46,14 +46,14 @@
   async function loadStaticContent(){
     const el = document.getElementById('page-content');
     try{
-      const { data, error } = await sb.from('site_settings').select('footer_terms').eq('id', 1).single();
+      const { data, error } = await sb.from('site_settings').select('footer_dmca').eq('id', 1).single();
       if(error) throw error;
-      const text = data && data.footer_terms;
+      const text = data && data.footer_dmca;
       el.textContent = text && text.trim() ? text : 'Konten belum diisi oleh admin.';
     } catch(err){
       el.innerHTML = errorStateHtml('loadStaticContent');
     }
-    setSeo({ title: 'Terms', description: 'Syarat dan ketentuan penggunaan situs Yakultind.' });
+    setSeo({ title: 'DMCA', description: 'Kebijakan DMCA dan prosedur pengaduan hak cipta Yakultind.' });
   }
   loadStaticContent();
 </script>
