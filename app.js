@@ -169,7 +169,7 @@ function renderFooter(){
   el.innerHTML = `
     <footer class="site-footer">
       <div class="footer-inner">
-        <div class="footer-brand">Yakult<em>ind</em></div>
+        <a href="index.html" class="footer-brand">Yakult<em>ind</em></a>
         <nav class="footer-links">
           <a href="kontak.html">Kontak</a>
           <a href="privacy.html">Privacy Policy</a>
