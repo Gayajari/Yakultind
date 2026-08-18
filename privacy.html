@@ -4,377 +4,60 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Privacy Policy — Yakultind</title>
+<meta name="description" content="Kebijakan privasi Yakultind terkait data dan penggunaan situs.">
+<link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-
-:root{
-  --cream:#FFF8F0;
-  --ink:#2B2420;
-  --raspberry:#E85D75;
-  --teal:#2A6F6F;
-  --yolk:#F4C95D;
-  --card:#FFFFFF;
-  --line: rgba(43,36,32,0.10);
-  --danger:#C74B4B;
-  --radius: 20px;
-}
-*{box-sizing:border-box;}
-html{scroll-behavior:smooth;}
-body{
-  margin:0;
-  background:var(--cream);
-  color:var(--ink);
-  font-family:'Inter',sans-serif;
-  -webkit-font-smoothing:antialiased;
-}
-a{color:inherit; text-decoration:none;}
-button{font-family:inherit; cursor:pointer;}
-input,textarea,select{font-family:inherit;}
-img{max-width:100%;}
-
-/* ---------- Site header ---------- */
-.site-header{
-  position:sticky; top:0; z-index:40;
-  background:rgba(255,248,240,0.92);
-  backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--line);
-}
-.header-top{
-  display:flex; align-items:center; gap:16px;
-  padding:14px 20px;
-  max-width:1120px; margin:0 auto;
-}
-.logo{
-  font-family:'Fraunces',serif; font-weight:700; font-size:21px;
-  flex-shrink:0;
-  white-space:nowrap;
-}
-.logo em{ font-style:italic; font-weight:400; color:var(--raspberry); }
-.header-search{ flex:1; position:relative; max-width:420px; }
-.header-search input{
-  width:100%; padding:10px 16px 10px 38px;
-  border-radius:999px; border:1.5px solid var(--line);
-  background:var(--card); font-size:14px; color:var(--ink); outline:none;
-  transition:border-color .2s, box-shadow .2s;
-}
-.header-search input:focus{ border-color:var(--raspberry); box-shadow:0 0 0 4px rgba(232,93,117,0.14); }
-.header-search svg{ position:absolute; left:13px; top:50%; transform:translateY(-50%); opacity:0.45; pointer-events:none; }
-
-.bar-slots{
-  display:flex; gap:8px; overflow-x:auto; padding:0 20px 12px;
-  max-width:1120px; margin:0 auto;
-  scrollbar-width:none;
-}
-.bar-slots::-webkit-scrollbar{display:none;}
-.bar-slots a{
-  flex-shrink:0;
-  font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500;
-  padding:7px 14px; border-radius:999px;
-  background:var(--card); border:1px solid var(--line);
-  transition:border-color .2s, color .2s;
-  white-space:nowrap;
-}
-.bar-slots a:hover{ border-color:var(--raspberry); color:var(--raspberry); }
-
-/* ---------- Back button ---------- */
-.back-btn{
-  display:inline-flex; align-items:center; gap:7px;
-  padding:9px 16px; border-radius:999px;
-  border:1.5px solid var(--line); background:var(--card);
-  font-size:13px; font-weight:500; color:var(--ink);
-  transition:border-color .2s, background .2s;
-  margin:16px 20px;
-}
-.back-btn:hover{ border-color:var(--raspberry); background:rgba(232,93,117,0.06); }
-.back-wrap{ max-width:1120px; margin:0 auto; }
-.back-wrap.bottom{ padding-bottom:10px; }
-
-/* ---------- Category chips ---------- */
-.chips{
-  display:flex; gap:8px; overflow-x:auto; padding:2px 20px 6px;
-  max-width:1120px; margin:0 auto;
-  scrollbar-width:none;
-}
-.chips::-webkit-scrollbar{ display:none; }
-.chip{
-  flex-shrink:0; font-size:13px; font-weight:500;
-  padding:8px 16px; border-radius:999px;
-  border:1.5px solid var(--line); background:var(--card);
-  transition:all .2s;
-}
-.chip.active{ background:var(--ink); color:var(--cream); border-color:var(--ink); }
-.chip:not(.active):hover{ border-color:var(--raspberry); color:var(--raspberry); }
-
-/* ---------- Tabs (Terbaru / Terlama) ---------- */
-.tabs{
-  display:flex; gap:6px; padding:4px; background:var(--card);
-  border:1px solid var(--line); border-radius:999px; width:fit-content;
-  margin:0 20px 20px;
-}
-.tab{
-  padding:8px 18px; border-radius:999px; border:none; background:transparent;
-  font-size:13px; font-weight:500; color:rgba(43,36,32,0.55);
-  transition:all .2s;
-}
-.tab.active{ background:var(--ink); color:var(--cream); }
-
-/* ---------- Cards / grid ---------- */
-main.wrap{ max-width:1120px; margin:0 auto; padding:0 20px 60px; }
-#grid{
-  display:grid; grid-template-columns:repeat(auto-fill, minmax(250px,1fr));
-  gap:20px;
-}
-.card{
-  background:var(--card); border-radius:var(--radius); border:1px solid var(--line);
-  overflow:hidden; display:flex; flex-direction:column;
-  transition:transform .25s, box-shadow .25s;
-}
-.card:hover{ transform:translateY(-4px); box-shadow:0 18px 34px -18px rgba(43,36,32,0.28); }
-.card .thumb{
-  aspect-ratio:4/3; background:var(--ink); overflow:hidden; position:relative; cursor:pointer;
-}
-.card .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
-.card .thumb .count{
-  position:absolute; bottom:8px; right:8px;
-  background:rgba(20,16,14,0.7); color:var(--cream);
-  font-family:'JetBrains Mono',monospace; font-size:11px;
-  padding:3px 8px; border-radius:999px;
-}
-.card .cat-tag{
-  position:absolute; top:10px; left:10px;
-  background:var(--yolk); color:var(--ink);
-  font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:500;
-  padding:4px 10px; border-radius:999px;
-}
-.card-body{ padding:16px 18px 18px; display:flex; flex-direction:column; gap:10px; flex:1; }
-.card-body h3{ font-family:'Fraunces',serif; font-weight:600; font-size:17.5px; margin:0; line-height:1.3; }
-.card-footer{ margin-top:auto; display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.date{ font-family:'JetBrains Mono',monospace; font-size:11px; color:rgba(43,36,32,0.45); }
-.btn-pill{
-  display:inline-flex; align-items:center; gap:6px;
-  padding:9px 16px; border-radius:999px;
-  background:var(--ink); color:var(--cream); font-size:13px; font-weight:500;
-  transition:background .2s;
-  border:none;
-}
-.btn-pill:hover{ background:var(--raspberry); }
-.btn-pill.ghost{ background:transparent; border:1.5px solid var(--line); color:var(--ink); }
-.btn-pill.ghost:hover{ border-color:var(--raspberry); color:var(--raspberry); background:rgba(232,93,117,0.06); }
-
-.empty,.loading{
-  text-align:center; padding:70px 20px; color:rgba(43,36,32,0.5);
-  font-family:'JetBrains Mono',monospace; font-size:13px; grid-column:1/-1;
-}
-
-/* ---------- Footer ---------- */
-.site-footer{
-  border-top:1px solid var(--line); background:var(--card);
-  margin-top:40px;
-}
-.footer-inner{
-  max-width:1120px; margin:0 auto; padding:40px 20px 24px;
-  display:flex; flex-wrap:wrap; justify-content:space-between; gap:24px;
-}
-.footer-brand{ font-family:'Fraunces',serif; font-weight:700; font-size:20px; }
-.footer-brand em{ font-style:italic; font-weight:400; color:var(--raspberry); }
-.footer-links{ display:flex; gap:18px; flex-wrap:wrap; }
-.footer-links a{ font-size:13px; color:rgba(43,36,32,0.6); transition:color .2s; }
-.footer-links a:hover{ color:var(--raspberry); }
-.footer-bottom{
-  text-align:center; padding:16px 20px 26px;
-  font-family:'JetBrains Mono',monospace; font-size:11.5px; color:rgba(43,36,32,0.4);
-}
-
-/* ---------- Static/footer content pages ---------- */
-.static-page{ max-width:720px; margin:0 auto; padding:20px 20px 60px; }
-.static-page h1{ font-family:'Fraunces',serif; font-size:34px; margin-bottom:20px; }
-.static-page .content{ font-size:15px; line-height:1.75; white-space:pre-wrap; color:rgba(43,36,32,0.85); }
-
-/* ---------- Watch page ---------- */
-.watch-wrap{ max-width:820px; margin:0 auto; padding:10px 20px 60px; }
-.watch-gallery{
-  display:grid; gap:6px; border-radius:var(--radius); overflow:hidden; margin-bottom:22px;
-  grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
-}
-.watch-gallery img{ width:100%; height:100%; object-fit:cover; cursor:zoom-in; display:block; aspect-ratio:1/1; }
-.watch-cat{
-  display:inline-block; background:var(--yolk); color:var(--ink);
-  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500;
-  padding:5px 12px; border-radius:999px; margin-bottom:12px;
-}
-.watch-wrap h1{ font-family:'Fraunces',serif; font-size:clamp(26px,5vw,38px); margin:0 0 10px; line-height:1.15; }
-.watch-meta{ font-family:'JetBrains Mono',monospace; font-size:12px; color:rgba(43,36,32,0.45); margin-bottom:24px; }
-.watch-actions{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
-
-/* ---------- Lightbox ---------- */
-#lightbox{
-  position:fixed; inset:0; background:rgba(20,16,14,0.92);
-  display:none; align-items:center; justify-content:center; z-index:200; padding:24px;
-}
-#lightbox.open{ display:flex; }
-#lightbox img{ max-width:min(900px,92vw); max-height:88vh; border-radius:12px; object-fit:contain; }
-#lightbox-close{
-  position:absolute; top:22px; right:26px; color:var(--cream); font-size:32px;
-  background:none; border:none; cursor:pointer; opacity:0.8;
-}
-
-@media (prefers-reduced-motion: reduce){ .card{ transition:none; } }
-@media (max-width:640px){
-  .header-top{ flex-wrap:wrap; }
-  .footer-inner{ flex-direction:column; }
-}
-
-</style>
+<link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
 <header class="site-header">
   <div class="header-top">
     <a href="index.html" class="logo">Yakult<em>ind</em></a>
-    <form id="global-search-form" class="header-search">
+    <div class="header-actions">
+      <button type="button" class="icon-round" id="search-toggle" aria-label="Pencarian" aria-expanded="false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <a href="index.html" class="home-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        Home
+      </a>
+    </div>
+  </div>
+  <div class="search-panel" id="search-panel">
+    <form id="global-search-form">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="global-search-input" type="text" placeholder="Cari judul post…" autocomplete="off">
+      <input id="global-search-input" type="text" placeholder="Pencarian..." autocomplete="off">
     </form>
   </div>
   <div class="bar-slots" id="bar-slots"></div>
 </header>
 
-<div class="back-top"></div>
+<div class="nav-row" id="nav-row"></div>
 
 <main class="static-page">
   <h1>Privacy Policy</h1>
-  <div class="content" id="page-content">Memuat…</div>
+  <div class="content" id="page-content"><div class="skel-line w1" style="height:15px;"></div><div class="skel-line" style="margin:14px 0;"></div><div class="skel-line w2" style="margin-left:0;"></div></div>
 </main>
 
-<div class="back-bottom"></div>
 <div id="site-footer-mount"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/app.js"></script>
 <script>
-const SUPABASE_URL = "https://agnxigqfdymitvqoapyq.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnbnhpZ3FmZHltaXR2cW9hcHlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NDU2MzgsImV4cCI6MjEwMjUyMTYzOH0.g_BvtGPk7uVNuuhlMz7aYil3ZHfQvw8WPPdWpdQ0G3g";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const BUCKET = 'foto-post';
-const SITE_NAME = 'Yakultind';
-
-function escapeHtml(str){
-  return (str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-function fmtDate(iso){
-  return new Date(iso).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'});
-}
-
-/* ---------- Header: search + 3 bar slots ---------- */
-async function initHeader(){
-  const form = document.getElementById('global-search-form');
-  if(form){
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const q = document.getElementById('global-search-input').value.trim();
-      window.location.href = 'index.html' + (q ? ('?q=' + encodeURIComponent(q)) : '');
-    });
-  }
-  const barsEl = document.getElementById('bar-slots');
-  if(barsEl){
-    const { data } = await sb.from('site_settings').select('*').eq('id', 1).single();
-    if(data){
-      const bars = [
-        [data.bar1_nama, data.bar1_link],
-        [data.bar2_nama, data.bar2_link],
-        [data.bar3_nama, data.bar3_link],
-      ].filter(([nama, link]) => nama && link);
-      barsEl.innerHTML = bars.map(([nama, link]) =>
-        `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(nama)}</a>`
-      ).join('');
-    }
-  }
-}
-
-/* ---------- Footer ---------- */
-function renderFooter(){
-  const el = document.getElementById('site-footer-mount');
-  if(!el) return;
-  el.innerHTML = `
-    <footer class="site-footer">
-      <div class="footer-inner">
-        <div class="footer-brand">Yakult<em>ind</em></div>
-        <nav class="footer-links">
-          <a href="index.html">Beranda</a>
-          <a href="kontak.html">Kontak</a>
-          <a href="privacy.html">Privacy Policy</a>
-          <a href="terms.html">Terms</a>
-          <a href="disclaimer.html">Disclaimer</a>
-        </nav>
-      </div>
-      <div class="footer-bottom">&copy; ${new Date().getFullYear()} Yakultind. Semua hak dilindungi.</div>
-    </footer>`;
-}
-
-/* ---------- Back buttons (top + bottom) ---------- */
-function renderBackButtons(){
-  const backHtml = `<div class="back-wrap"><a href="#" class="back-btn" onclick="goBack(event)">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Kembali</a></div>`;
-  document.querySelectorAll('.back-top').forEach(el => el.innerHTML = backHtml);
-  document.querySelectorAll('.back-bottom').forEach(el => el.innerHTML = backHtml);
-}
-function goBack(e){
-  e.preventDefault();
-  if(document.referrer && document.referrer.includes(window.location.host)){
-    window.history.back();
-  } else {
-    window.location.href = 'index.html';
-  }
-}
-
-/* ---------- Lightbox (shared) ---------- */
-function ensureLightbox(){
-  if(document.getElementById('lightbox')) return;
-  const div = document.createElement('div');
-  div.id = 'lightbox';
-  div.innerHTML = `<button id="lightbox-close" aria-label="Tutup">&times;</button><img id="lightbox-img" src="" alt="">`;
-  document.body.appendChild(div);
-  document.getElementById('lightbox-close').onclick = () => div.classList.remove('open');
-  div.addEventListener('click', e => { if(e.target.id === 'lightbox') div.classList.remove('open'); });
-}
-function openLightbox(url){
-  ensureLightbox();
-  document.getElementById('lightbox-img').src = url;
-  document.getElementById('lightbox').classList.add('open');
-}
-
-/* ---------- SEO helper ---------- */
-function setSeo({ title, description, keywords, image }){
-  if(title) document.title = title + ' — ' + SITE_NAME;
-  const setMeta = (name, content, attr='name') => {
-    if(!content) return;
-    let tag = document.querySelector(`meta[${attr}="${name}"]`);
-    if(!tag){ tag = document.createElement('meta'); tag.setAttribute(attr, name); document.head.appendChild(tag); }
-    tag.setAttribute('content', content);
-  };
-  setMeta('description', description);
-  setMeta('keywords', keywords);
-  setMeta('og:title', title, 'property');
-  setMeta('og:description', description, 'property');
-  if(image) setMeta('og:image', image, 'property');
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  initHeader();
-  renderFooter();
-  renderBackButtons();
-});
-
-</script>
-<script>
-  (async () => {
-    const { data } = await sb.from('site_settings').select('footer_privacy').eq('id', 1).single();
+  async function loadStaticContent(){
     const el = document.getElementById('page-content');
-    const text = data && data.footer_privacy;
-    el.textContent = text && text.trim() ? text : 'Konten belum diisi oleh admin.';
-    setSeo({ title: 'Privacy Policy', description: 'Privacy Policy Yakultind' });
-  })();
+    try{
+      const { data, error } = await sb.from('site_settings').select('footer_privacy').eq('id', 1).single();
+      if(error) throw error;
+      const text = data && data.footer_privacy;
+      el.textContent = text && text.trim() ? text : 'Konten belum diisi oleh admin.';
+    } catch(err){
+      el.innerHTML = errorStateHtml('loadStaticContent');
+    }
+    setSeo({ title: 'Privacy Policy', description: 'Kebijakan privasi Yakultind terkait data dan penggunaan situs.' });
+  }
+  loadStaticContent();
 </script>
 </body>
 </html>

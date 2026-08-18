@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yakultind — Admin</title>
+<link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -25,7 +26,8 @@
   .login-box h1{ font-family:'Fraunces',serif; font-size:30px; margin:0 0 26px; }
   .field{ margin-bottom:16px; }
   .field label{ display:block; font-size:12.5px; font-weight:500; margin-bottom:7px; color:rgba(43,36,32,0.7); }
-  .field input, .field textarea{ width:100%; padding:13px 15px; border-radius:12px; border:1.5px solid var(--line); font-size:14.5px; outline:none; transition:border-color .2s, box-shadow .2s; background:var(--cream); }
+  .field input, .field textarea{ width:100%; padding:13px 15px; border-radius:12px; border:1.5px solid var(--line); font-size:16px; outline:none; transition:border-color .2s, box-shadow .2s; background:var(--cream); }
+  @media (min-width:640px){ .field input, .field textarea{ font-size:14.5px; } }
   .field input:focus, .field textarea:focus{ border-color:var(--raspberry); box-shadow:0 0 0 4px rgba(232,93,117,0.14); }
   .field textarea{ resize:vertical; min-height:110px; font-size:14px; line-height:1.6; }
   .btn-primary{ width:100%; padding:14px; border:none; border-radius:999px; background:var(--ink); color:var(--cream); font-size:14.5px; font-weight:600; transition:background .2s, opacity .2s; }
@@ -121,7 +123,7 @@
 
   <div class="tabbar" id="tabbar">
     <button class="btn-ghost active" data-tab="posts">Post</button>
-    <button class="btn-ghost" data-tab="bars">Bar Header</button>
+    <button class="btn-ghost" data-tab="bars">Link Bar</button>
     <button class="btn-ghost" data-tab="footer">Halaman Footer</button>
   </div>
 
@@ -174,23 +176,44 @@
     <!-- ===== TAB: BAR HEADER ===== -->
     <section class="section" id="tab-bars">
       <div class="panel">
-        <h2>3 slot bar di header</h2>
-        <p class="hint">Nama & link tiap bar ini tampil di header semua halaman. Kosongkan nama untuk sembunyikan slot.</p>
+        <h2>3 slot link sosmed di header</h2>
+        <p class="hint">Nama & link tiap slot tampil di header semua halaman, lengkap dengan ikon otomatis kalau namanya mengandung "WA/WhatsApp", "Telegram", atau "Discord". Kosongkan nama untuk sembunyikan slot.</p>
         <form id="bars-form">
           <div class="grid-2" style="margin-bottom:6px;">
-            <div class="field"><label>Nama Bar 1</label><input type="text" id="bar1_nama"></div>
-            <div class="field"><label>Link Bar 1</label><input type="url" id="bar1_link"></div>
+            <div class="field"><label>Nama Bar 1</label><input type="text" id="bar1_nama" placeholder="Contoh: WhatsApp"></div>
+            <div class="field"><label>Link Bar 1</label><input type="url" id="bar1_link" placeholder="https://wa.me/..."></div>
           </div>
           <div class="grid-2" style="margin-bottom:6px;">
-            <div class="field"><label>Nama Bar 2</label><input type="text" id="bar2_nama"></div>
-            <div class="field"><label>Link Bar 2</label><input type="url" id="bar2_link"></div>
+            <div class="field"><label>Nama Bar 2</label><input type="text" id="bar2_nama" placeholder="Contoh: Telegram"></div>
+            <div class="field"><label>Link Bar 2</label><input type="url" id="bar2_link" placeholder="https://t.me/..."></div>
           </div>
           <div class="grid-2" style="margin-bottom:6px;">
-            <div class="field"><label>Nama Bar 3</label><input type="text" id="bar3_nama"></div>
-            <div class="field"><label>Link Bar 3</label><input type="url" id="bar3_link"></div>
+            <div class="field"><label>Nama Bar 3</label><input type="text" id="bar3_nama" placeholder="Contoh: Discord"></div>
+            <div class="field"><label>Link Bar 3</label><input type="url" id="bar3_link" placeholder="https://discord.gg/..."></div>
           </div>
-          <button class="btn-primary" type="submit">Simpan bar header</button>
+          <button class="btn-primary" type="submit">Simpan link header</button>
           <div id="bars-status"></div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>3 slot link di halaman watch (detail post)</h2>
+        <p class="hint">Tampil di bawah tombol Buka Link/Unduh pada setiap halaman detail post. Ikon otomatis terdeteksi dari nama, misalnya "Tutorial PC", "Nonton TV", atau "Terbatas 18+". Kosongkan nama untuk sembunyikan slot.</p>
+        <form id="watch-bars-form">
+          <div class="grid-2" style="margin-bottom:6px;">
+            <div class="field"><label>Nama Slot 1</label><input type="text" id="watch_bar1_nama" placeholder="Contoh: Tutorial PC"></div>
+            <div class="field"><label>Link Slot 1</label><input type="url" id="watch_bar1_link"></div>
+          </div>
+          <div class="grid-2" style="margin-bottom:6px;">
+            <div class="field"><label>Nama Slot 2</label><input type="text" id="watch_bar2_nama" placeholder="Contoh: Tutorial TV"></div>
+            <div class="field"><label>Link Slot 2</label><input type="url" id="watch_bar2_link"></div>
+          </div>
+          <div class="grid-2" style="margin-bottom:6px;">
+            <div class="field"><label>Nama Slot 3</label><input type="text" id="watch_bar3_nama" placeholder="Contoh: Terbatas 18+"></div>
+            <div class="field"><label>Link Slot 3</label><input type="url" id="watch_bar3_link"></div>
+          </div>
+          <button class="btn-primary" type="submit">Simpan link watch page</button>
+          <div id="watch-bars-status"></div>
         </form>
       </div>
     </section>
@@ -449,6 +472,10 @@
     ['bar1_nama','bar1_link','bar2_nama','bar2_link','bar3_nama','bar3_link'].forEach(key => {
       document.getElementById(key).value = data[key] || '';
     });
+    ['watch_bar1_nama','watch_bar1_link','watch_bar2_nama','watch_bar2_link','watch_bar3_nama','watch_bar3_link'].forEach(key => {
+      const el = document.getElementById(key);
+      if(el) el.value = data[key] || '';
+    });
   }
   document.getElementById('bars-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -460,7 +487,20 @@
     const { error } = await sb.from('site_settings').update(payload).eq('id', 1);
     status.style.display = 'block';
     if(error){ status.textContent = 'Gagal menyimpan: ' + error.message; status.className = 'err'; }
-    else { status.textContent = 'Tersimpan.'; status.className = 'ok'; showToast('Bar header diperbarui'); }
+    else { status.textContent = 'Tersimpan.'; status.className = 'ok'; showToast('Link header diperbarui'); }
+  });
+
+  document.getElementById('watch-bars-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const status = document.getElementById('watch-bars-status');
+    const payload = {};
+    ['watch_bar1_nama','watch_bar1_link','watch_bar2_nama','watch_bar2_link','watch_bar3_nama','watch_bar3_link'].forEach(key => {
+      payload[key] = document.getElementById(key).value.trim();
+    });
+    const { error } = await sb.from('site_settings').update(payload).eq('id', 1);
+    status.style.display = 'block';
+    if(error){ status.textContent = 'Gagal menyimpan: kolom watch_bar mungkin belum ada di tabel site_settings. ' + error.message; status.className = 'err'; }
+    else { status.textContent = 'Tersimpan.'; status.className = 'ok'; showToast('Link watch page diperbarui'); }
   });
 
   /* ---------- FOOTER PAGES SETTINGS ---------- */
