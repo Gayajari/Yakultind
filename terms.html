@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms — Yakultind</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-top">
+    <a href="index.html" class="logo">Yakult<em>ind</em></a>
+    <form id="global-search-form" class="header-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="global-search-input" type="text" placeholder="Cari judul post…" autocomplete="off">
+    </form>
+  </div>
+  <div class="bar-slots" id="bar-slots"></div>
+</header>
+
+<div class="back-top"></div>
+
+<main class="static-page">
+  <h1>Terms</h1>
+  <div class="content" id="page-content">Memuat…</div>
+</main>
+
+<div class="back-bottom"></div>
+<div id="site-footer-mount"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/site.js"></script>
+<script>
+  (async () => {
+    const { data } = await sb.from('site_settings').select('footer_terms').eq('id', 1).single();
+    const el = document.getElementById('page-content');
+    const text = data && data.footer_terms;
+    el.textContent = text && text.trim() ? text : 'Konten belum diisi oleh admin.';
+    setSeo({ title: 'Terms', description: 'Terms Yakultind' });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memuat… — Yakultind</title>
+<meta name="description" content="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-top">
+    <a href="index.html" class="logo">Yakult<em>ind</em></a>
+    <form id="global-search-form" class="header-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="global-search-input" type="text" placeholder="Cari judul post…" autocomplete="off">
+    </form>
+  </div>
+  <div class="bar-slots" id="bar-slots"></div>
+</header>
+
+<div class="back-top"></div>
+
+<main class="watch-wrap" id="watch-main">
+  <div class="loading">Memuat…</div>
+</main>
+
+<section class="watch-wrap" id="related-wrap" style="display:none;">
+  <h2 style="font-family:'Fraunces',serif; font-size:20px; margin:10px 0 16px;">Pencarian Terkait</h2>
+  <div id="related-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:16px;"></div>
+</section>
+
+<div class="back-bottom"></div>
+<div id="site-footer-mount"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/site.js"></script>
+<script>
+  async function loadPost(){
+    const id = new URLSearchParams(window.location.search).get('id');
+    const main = document.getElementById('watch-main');
+    if(!id){
+      main.innerHTML = '<div class="empty">Post tidak ditemukan.</div>';
+      return;
+    }
+    const { data: post, error } = await sb.from('posts').select('*').eq('id', id).single();
+    if(error || !post){
+      main.innerHTML = '<div class="empty">Post tidak ditemukan atau sudah dihapus.</div>';
+      return;
+    }
+
+    const photos = post.foto_urls || [];
+    setSeo({
+      title: post.judul,
+      description: `${post.judul} — kategori ${post.kategori || 'Umum'} di Yakultind.`,
+      keywords: `${post.judul}, ${post.kategori || ''}, yakultind`,
+      image: photos[0] || ''
+    });
+
+    main.innerHTML = `
+      <div class="watch-gallery">
+        ${photos.map(url => `<img src="${url}" alt="${escapeHtml(post.judul)}" onclick="openLightbox('${url}')">`).join('')}
+      </div>
+      <span class="watch-cat">${escapeHtml(post.kategori || 'Umum')}</span>
+      <h1>${escapeHtml(post.judul)}</h1>
+      <div class="watch-meta">Dipublikasikan ${fmtDate(post.dibuat_pada)}</div>
+      <div class="watch-actions">
+        <a class="btn-pill" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer">Buka Link</a>
+        ${post.link_download ? `<a class="btn-pill ghost" href="${escapeHtml(post.link_download)}" target="_blank" rel="noopener noreferrer">Unduh</a>` : ''}
+      </div>
+    `;
+
+    sb.rpc('increment_views', { post_id: id }).then(() => {});
+    loadRelated(id);
+  }
+
+  async function loadRelated(currentId){
+    const { data, error } = await sb.from('posts').select('*').neq('id', currentId);
+    if(error || !data || !data.length) return;
+
+    // Ambil sebagian besar dari yang paling banyak dibuka
+    const byViews = [...data].sort((a,b) => (b.views||0) - (a.views||0));
+    const popularCount = Math.min(4, byViews.length);
+    const popular = byViews.slice(0, popularCount);
+
+    // Sisipkan beberapa post lain (lama/baru) secara acak, di luar yang sudah kepilih
+    const rest = data.filter(p => !popular.find(x => x.id === p.id));
+    const shuffled = rest.sort(() => Math.random() - 0.5);
+    const extra = shuffled.slice(0, 2);
+
+    const related = [...popular, ...extra].sort(() => Math.random() - 0.5);
+    if(!related.length) return;
+
+    document.getElementById('related-wrap').style.display = 'block';
+    document.getElementById('related-grid').innerHTML = related.map(p => {
+      const cover = (p.foto_urls || [])[0] || '';
+      return `
+        <a class="card" href="watch.html?id=${p.id}" style="display:block;">
+          <div class="thumb"><img src="${cover}" alt="${escapeHtml(p.judul)}" loading="lazy"></div>
+          <div class="card-body">
+            <h3 style="font-size:15px;">${escapeHtml(p.judul)}</h3>
+            <span class="date">${fmtDate(p.dibuat_pada)}</span>
+          </div>
+        </a>`;
+    }).join('');
+  }
+
+  loadPost();
+</script>
+</body>
+</html>

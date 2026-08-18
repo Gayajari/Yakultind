@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yakultind — Galeri Foto &amp; Link</title>
+<meta name="description" content="Yakultind — kumpulan foto dan link terbaru, ditata rapi dan mudah dicari.">
+<meta name="keywords" content="yakultind, galeri foto, kumpulan link, foto dan link">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-top">
+    <a href="index.html" class="logo">Yakult<em>ind</em></a>
+    <form id="global-search-form" class="header-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="global-search-input" type="text" placeholder="Cari judul post…" autocomplete="off">
+    </form>
+  </div>
+  <div class="bar-slots" id="bar-slots"></div>
+</header>
+
+<div class="back-top"></div>
+
+<main class="wrap">
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-sort="baru">Terbaru</button>
+    <button class="tab" data-sort="lama">Terlama</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div id="grid"><div class="loading">Memuat…</div></div>
+</main>
+
+<div class="back-bottom"></div>
+<div id="site-footer-mount"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/site.js"></script>
+<script>
+  let allPosts = [];
+  let currentCategory = 'Semua';
+  let currentSort = 'baru';
+
+  function renderPosts(){
+    const grid = document.getElementById('grid');
+    const q = new URLSearchParams(window.location.search).get('q');
+    if(q) document.getElementById('global-search-input').value = q;
+
+    let list = [...allPosts];
+    if(currentCategory !== 'Semua') list = list.filter(p => (p.kategori || 'Umum') === currentCategory);
+    if(q) list = list.filter(p => p.judul.toLowerCase().includes(q.toLowerCase()));
+    list.sort((a,b) => currentSort === 'baru'
+      ? new Date(b.dibuat_pada) - new Date(a.dibuat_pada)
+      : new Date(a.dibuat_pada) - new Date(b.dibuat_pada));
+
+    if(!list.length){
+      grid.innerHTML = '<div class="empty">Belum ada post yang cocok.</div>';
+      return;
+    }
+    grid.innerHTML = list.map(p => {
+      const photos = p.foto_urls || [];
+      const cover = photos[0] || '';
+      return `
+        <article class="card">
+          <a class="thumb" href="watch.html?id=${p.id}">
+            <span class="cat-tag">${escapeHtml(p.kategori || 'Umum')}</span>
+            ${photos.length > 1 ? `<span class="count">${photos.length} foto</span>` : ''}
+            <img src="${cover}" alt="${escapeHtml(p.judul)}" loading="lazy">
+          </a>
+          <div class="card-body">
+            <h3><a href="watch.html?id=${p.id}">${escapeHtml(p.judul)}</a></h3>
+            <div class="card-footer">
+              <span class="date">${fmtDate(p.dibuat_pada)}</span>
+              <a class="btn-pill" href="watch.html?id=${p.id}">Lihat</a>
+            </div>
+          </div>
+        </article>`;
+    }).join('');
+  }
+
+  function renderChips(){
+    const cats = ['Semua', ...new Set(allPosts.map(p => p.kategori || 'Umum'))];
+    document.getElementById('chips').innerHTML = cats.map(c =>
+      `<button class="chip ${c === currentCategory ? 'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`
+    ).join('');
+    document.querySelectorAll('.chip').forEach(btn => btn.addEventListener('click', () => {
+      currentCategory = btn.dataset.cat;
+      renderChips(); renderPosts();
+    }));
+  }
+
+  document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    currentSort = btn.dataset.sort;
+    renderPosts();
+  }));
+
+  document.getElementById('global-search-input').addEventListener('input', renderPosts);
+
+  async function loadPosts(){
+    const { data, error } = await sb.from('posts').select('*').order('dibuat_pada', { ascending:false });
+    if(error){
+      document.getElementById('grid').innerHTML = `<div class="empty">Gagal memuat: ${escapeHtml(error.message)}</div>`;
+      return;
+    }
+    allPosts = data || [];
+    renderChips();
+    renderPosts();
+  }
+  loadPosts();
+</script>
+</body>
+</html>
