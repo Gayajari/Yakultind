@@ -32,6 +32,23 @@
   <div class="bar-slots" id="bar-slots"></div>
 </header>
 
+<script>
+  /* Menghitung tinggi header secara dinamis untuk offset sticky baris kategori.
+     Hanya urusan tampilan — tidak menyentuh data, routing, atau fungsi lain. */
+  (function(){
+    var headerEl = document.querySelector('.site-header');
+    function setHeaderHeight(){
+      document.documentElement.style.setProperty('--header-h', headerEl.offsetHeight + 'px');
+    }
+    setHeaderHeight();
+    window.addEventListener('resize', setHeaderHeight);
+    window.addEventListener('load', setHeaderHeight);
+    if(window.ResizeObserver){
+      new ResizeObserver(setHeaderHeight).observe(headerEl);
+    }
+  })();
+</script>
+
 <div class="nav-row" id="nav-row"></div>
 
 <main class="wrap">

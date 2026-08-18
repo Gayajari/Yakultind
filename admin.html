@@ -85,6 +85,10 @@
   .post-info{ flex:1; min-width:0; }
   .post-info h4{ margin:0 0 3px; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .post-info .meta{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:rgba(43,36,32,0.45); }
+  .post-views{ display:flex; align-items:center; gap:6px; margin-top:5px; }
+  .post-views .bar{ flex:1; max-width:120px; height:4px; border-radius:999px; background:var(--line); overflow:hidden; }
+  .post-views .bar-fill{ display:block; height:100%; background:var(--teal); border-radius:999px; }
+  .post-views .num{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:rgba(43,36,32,0.45); flex-shrink:0; }
   .row-actions{ display:flex; gap:6px; flex-shrink:0; }
   .icon-btn{ width:32px; height:32px; border-radius:9px; border:1.5px solid var(--line); background:transparent; display:flex; align-items:center; justify-content:center; color:var(--ink); transition:all .2s; }
   .icon-btn:hover{ border-color:var(--raspberry); color:var(--raspberry); background:rgba(232,93,117,0.06); }
@@ -454,15 +458,22 @@
       listEl.innerHTML = '<div class="empty-list">Belum ada post. Tambahkan lewat form di atas.</div>';
       return;
     }
+    const maxViews = Math.max(0, ...currentPosts.map(p => p.views || 0));
     listEl.innerHTML = currentPosts.map(p => {
       const cover = (p.foto_urls || [])[0] || '';
       const d = new Date(p.dibuat_pada).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'});
+      const views = p.views || 0;
+      const pct = maxViews > 0 ? Math.round((views / maxViews) * 100) : 0;
       return `
         <div class="post-row" data-id="${p.id}">
           <div class="post-thumbs"><img src="${cover}" alt=""></div>
           <div class="post-info">
             <h4>${escapeHtml(p.judul)}</h4>
             <div class="meta">${escapeHtml(p.kategori || 'Umum')} · ${d} · ${(p.foto_urls||[]).length} foto</div>
+            <div class="post-views">
+              <div class="bar"><span class="bar-fill" style="width:${pct}%"></span></div>
+              <span class="num">${views} dilihat</span>
+            </div>
           </div>
           <div class="row-actions">
             <button class="icon-btn" title="Bagikan" data-action="share"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg></button>
