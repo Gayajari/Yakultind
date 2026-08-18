@@ -102,8 +102,9 @@ img{max-width:100%;}
 
 /* Baris kedua header (Telegram / Tutorial download) — di-scope ke .site-header
    supaya bar-slots di halaman lain (mis. watch.html) tidak ikut berubah */
-.site-header .bar-slots{ gap:8px; padding:0 20px 10px; }
-.site-header .bar-slots a{ font-size:12.5px; padding:7px 13px; }
+.site-header .bar-slots{ gap:6px; padding:0 20px 8px; }
+.site-header .bar-slots a{ font-size:11px; padding:6px 12px; }
+.site-header .bar-slots svg{ width:12px; height:12px; }
 
 /* ---------- Nav row (Kembali + Home) ---------- */
 .nav-row{
@@ -135,8 +136,8 @@ img{max-width:100%;}
 }
 .chips::-webkit-scrollbar{ display:none; }
 .chip{
-  flex-shrink:0; font-size:12.5px; font-weight:500;
-  padding:7px 13px; border-radius:999px;
+  flex-shrink:0; font-size:11px; font-weight:500;
+  padding:6px 11px; border-radius:999px;
   border:1.5px solid var(--line); background:var(--card);
   transition:all .2s;
 }
@@ -145,13 +146,13 @@ img{max-width:100%;}
 
 /* ---------- Tabs (Terbaru / Terlama) ---------- */
 .tabs{
-  display:flex; gap:6px; padding:4px; background:var(--card);
+  display:flex; gap:5px; padding:3px; background:var(--card);
   border:1px solid var(--line); border-radius:999px; width:fit-content;
-  margin:0 20px 14px;
+  margin:0 20px 10px;
 }
 .tab{
-  padding:8px 18px; border-radius:999px; border:none; background:transparent;
-  font-size:13px; font-weight:500; color:rgba(43,36,32,0.55);
+  padding:6px 14px; border-radius:999px; border:none; background:transparent;
+  font-size:11px; font-weight:500; color:rgba(43,36,32,0.55);
   transition:all .2s;
 }
 .tab.active{ background:var(--ink); color:var(--cream); }
