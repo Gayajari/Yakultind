@@ -233,15 +233,35 @@
           <div id="watch-bars-status"></div>
         </form>
       </div>
+
+      <div class="panel">
+        <h2>3 slot link di halaman Kontak</h2>
+        <p class="hint">Tampil sebagai tombol langsung di halaman Kontak (bisa WhatsApp, Telegram, Email, dll). Kosongkan nama untuk sembunyikan slot — kalau ketiganya kosong, halaman Kontak tidak menampilkan tombol apa pun.</p>
+        <form id="kontak-bars-form">
+          <div class="grid-2" style="margin-bottom:6px;">
+            <div class="field"><label>Nama Slot 1</label><input type="text" id="kontak_bar1_nama" placeholder="Contoh: WhatsApp"></div>
+            <div class="field"><label>Link Slot 1</label><input type="url" id="kontak_bar1_link" placeholder="https://wa.me/..."></div>
+          </div>
+          <div class="grid-2" style="margin-bottom:6px;">
+            <div class="field"><label>Nama Slot 2</label><input type="text" id="kontak_bar2_nama" placeholder="Contoh: Telegram"></div>
+            <div class="field"><label>Link Slot 2</label><input type="url" id="kontak_bar2_link" placeholder="https://t.me/..."></div>
+          </div>
+          <div class="grid-2" style="margin-bottom:6px;">
+            <div class="field"><label>Nama Slot 3</label><input type="text" id="kontak_bar3_nama" placeholder="Contoh: Email"></div>
+            <div class="field"><label>Link Slot 3</label><input type="url" id="kontak_bar3_link" placeholder="mailto:admin@yakultind.com"></div>
+          </div>
+          <button class="btn-primary" type="submit">Simpan link kontak</button>
+          <div id="kontak-bars-status"></div>
+        </form>
+      </div>
     </section>
 
     <!-- ===== TAB: FOOTER PAGES ===== -->
     <section class="section" id="tab-footer">
       <div class="panel">
         <h2>Isi halaman footer</h2>
-        <p class="hint">Teks ini tampil apa adanya di halaman Kontak / Privacy / Terms / Disclaimer.</p>
+        <p class="hint">Teks ini tampil apa adanya di halaman Privacy / Terms / Disclaimer / DMCA. Kontak diatur lewat 3 slot link di tab "Link Bar".</p>
         <form id="footer-form">
-          <div class="field"><label>Kontak</label><textarea id="footer_kontak" placeholder="Info kontak…"></textarea></div>
           <div class="field"><label>Privacy Policy</label><textarea id="footer_privacy" placeholder="Kebijakan privasi…"></textarea></div>
           <div class="field"><label>Terms</label><textarea id="footer_terms" placeholder="Syarat & ketentuan…"></textarea></div>
           <div class="field"><label>Disclaimer</label><textarea id="footer_disclaimer" placeholder="Sangkalan…"></textarea></div>
@@ -543,7 +563,8 @@
     ['bar1_nama','bar1_link','bar2_nama','bar2_link','bar3_nama','bar3_link'].forEach(key => {
       document.getElementById(key).value = data[key] || '';
     });
-    ['watch_bar1_nama','watch_bar1_link','watch_bar2_nama','watch_bar2_link','watch_bar3_nama','watch_bar3_link'].forEach(key => {
+    ['watch_bar1_nama','watch_bar1_link','watch_bar2_nama','watch_bar2_link','watch_bar3_nama','watch_bar3_link',
+     'kontak_bar1_nama','kontak_bar1_link','kontak_bar2_nama','kontak_bar2_link','kontak_bar3_nama','kontak_bar3_link'].forEach(key => {
       const el = document.getElementById(key);
       if(el) el.value = data[key] || '';
     });
@@ -574,11 +595,24 @@
     else { status.textContent = 'Tersimpan.'; status.className = 'ok'; showToast('Link watch page diperbarui'); }
   });
 
+  document.getElementById('kontak-bars-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const status = document.getElementById('kontak-bars-status');
+    const payload = {};
+    ['kontak_bar1_nama','kontak_bar1_link','kontak_bar2_nama','kontak_bar2_link','kontak_bar3_nama','kontak_bar3_link'].forEach(key => {
+      payload[key] = document.getElementById(key).value.trim();
+    });
+    const { error } = await sb.from('site_settings').update(payload).eq('id', 1);
+    status.style.display = 'block';
+    if(error){ status.textContent = 'Gagal menyimpan: kolom kontak_bar mungkin belum ada di tabel site_settings. ' + error.message; status.className = 'err'; }
+    else { status.textContent = 'Tersimpan.'; status.className = 'ok'; showToast('Link kontak diperbarui'); }
+  });
+
   /* ---------- FOOTER PAGES SETTINGS ---------- */
   async function loadFooter(){
     const { data } = await sb.from('site_settings').select('*').eq('id', 1).single();
     if(!data) return;
-    ['footer_kontak','footer_privacy','footer_terms','footer_disclaimer','footer_dmca'].forEach(key => {
+    ['footer_privacy','footer_terms','footer_disclaimer','footer_dmca'].forEach(key => {
       document.getElementById(key).value = data[key] || '';
     });
   }
@@ -586,7 +620,7 @@
     e.preventDefault();
     const status = document.getElementById('footer-status');
     const payload = {};
-    ['footer_kontak','footer_privacy','footer_terms','footer_disclaimer','footer_dmca'].forEach(key => {
+    ['footer_privacy','footer_terms','footer_disclaimer','footer_dmca'].forEach(key => {
       payload[key] = document.getElementById(key).value;
     });
     const { error } = await sb.from('site_settings').update(payload).eq('id', 1);
