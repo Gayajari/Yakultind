@@ -148,7 +148,7 @@ img{max-width:100%;}
 .tabs{
   display:flex; gap:5px; padding:3px; background:var(--card);
   border:1px solid var(--line); border-radius:999px; width:fit-content;
-  margin:0 20px 10px;
+  margin:12px 20px 10px;
 }
 .tab{
   padding:6px 14px; border-radius:999px; border:none; background:transparent;
