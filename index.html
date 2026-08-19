@@ -159,6 +159,17 @@
     renderPosts();
   }));
 
+  // Tombol Home di header index.html sendiri: reset kategori ke Semua.
+  // Kategori terakhir tetap tersimpan untuk tombol Home di halaman watch/detail,
+  // jadi klik pertama dari sana balik ke kategori yang sedang dibuka, dan klik
+  // kedua (dari index.html) baru balik ke home asli (Semua).
+  const homeBtnTop = document.querySelector('.header-top .home-btn');
+  if(homeBtnTop){
+    homeBtnTop.addEventListener('click', () => {
+      cacheSetState({ category: 'Semua', sort: currentSort, page: 1 });
+    });
+  }
+
   async function loadPosts(){
     const grid = document.getElementById('grid');
     const cached = cacheGetPosts();
