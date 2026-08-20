@@ -159,6 +159,12 @@
   window.onSearchChange = function(q){
     currentSearch = q;
     currentPage = 1;
+    // Search harus lintas-kategori: kalau ada kata kunci, jangan dibatasi
+    // chip yang sedang aktif — reset ke Semua supaya hasilnya global.
+    if(q && q.trim()){
+      currentCategory = 'Semua';
+      renderChips();
+    }
     renderPosts();
   };
 
@@ -166,6 +172,7 @@
   // (reload halaman) karena tidak dicegah — sekarang dicegah dan langsung jalankan pencarian.
   const searchFormEl = document.getElementById('global-search-form');
   const searchInputEl = document.getElementById('global-search-input');
+  let forceGlobalSearch = false;
   if(searchFormEl && searchInputEl){
     searchFormEl.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -179,6 +186,7 @@
       document.getElementById('search-panel').classList.add('open');
       document.getElementById('search-toggle').setAttribute('aria-expanded', 'true');
       currentSearch = searchFromUrl;
+      forceGlobalSearch = true; // dipakai di loadPosts() supaya tidak ketimpa kategori dari cache
     }
   }
 
@@ -211,6 +219,7 @@
       currentPage = state.page || 1;
       document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.sort === currentSort));
     }
+    if(forceGlobalSearch) currentCategory = 'Semua';
 
     if(cached && cached.posts.length){
       allPosts = cached.posts;
