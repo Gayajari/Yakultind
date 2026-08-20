@@ -70,6 +70,17 @@ Kami akan meninjau setiap laporan yang valid dan menghapus atau menonaktifkan ak
     }
     setSeo({ title: 'DMCA', description: 'Kebijakan DMCA dan prosedur pengaduan hak cipta Yakultind.' });
   }
+  // Search global di header: cegah reload saat Enter ditekan, arahkan ke pencarian index.
+  const searchFormEl = document.getElementById('global-search-form');
+  const searchInputEl = document.getElementById('global-search-input');
+  if(searchFormEl && searchInputEl){
+    searchFormEl.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const q = searchInputEl.value.trim();
+      if(q) location.href = 'index.html?search=' + encodeURIComponent(q);
+    });
+  }
+
   loadStaticContent();
 </script>
 </body>

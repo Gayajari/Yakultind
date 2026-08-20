@@ -89,6 +89,8 @@
   .post-views .bar{ flex:1; max-width:120px; height:4px; border-radius:999px; background:var(--line); overflow:hidden; }
   .post-views .bar-fill{ display:block; height:100%; background:var(--teal); border-radius:999px; }
   .post-views .num{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:rgba(43,36,32,0.45); flex-shrink:0; }
+  .post-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+  .tag-chip{ font-size:10px; padding:2px 8px; border-radius:999px; background:var(--cream); border:1px solid var(--line); color:rgba(43,36,32,0.55); }
   .row-actions{ display:flex; gap:6px; flex-shrink:0; }
   .icon-btn{ width:32px; height:32px; border-radius:9px; border:1.5px solid var(--line); background:transparent; display:flex; align-items:center; justify-content:center; color:var(--ink); transition:all .2s; }
   .icon-btn:hover{ border-color:var(--raspberry); color:var(--raspberry); background:rgba(232,93,117,0.06); }
@@ -152,6 +154,11 @@
               <input type="text" id="kategori-input" list="kategori-list" placeholder="Ketik kategori…">
               <datalist id="kategori-list"></datalist>
             </div>
+          </div>
+          <div class="field">
+            <label for="tags-input">Tag (opsional)</label>
+            <input type="text" id="tags-input" placeholder="Contoh: viral, trending, terbaru (pisah pakai koma)">
+            <p class="hint" style="margin-top:4px;">Pakai kategori yang <b>sudah ada</b> di atas kalau bisa — biar tidak pecah jadi chip baru. Kata tambahan seperti "viral" masuk ke sini (Tag), bukan ke Kategori. Tag dipakai untuk memperkuat pencarian, tidak membuat chip navigasi baru.</p>
           </div>
           <div class="grid-2">
             <div class="field">
@@ -380,6 +387,8 @@
     const submitBtn = document.getElementById('submit-btn');
     const judul = document.getElementById('judul-input').value.trim();
     const kategori = document.getElementById('kategori-input').value.trim() || 'Umum';
+    const tagsRaw = document.getElementById('tags-input').value.trim();
+    const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean).join(', ') : null;
     const link = document.getElementById('link-input').value.trim();
     const link_download = document.getElementById('download-input').value.trim() || null;
 
@@ -397,11 +406,11 @@
       }
 
       if(editingId){
-        const { error } = await sb.from('posts').update({ judul, kategori, link, link_download, foto_urls }).eq('id', editingId);
+        const { error } = await sb.from('posts').update({ judul, kategori, tags, link, link_download, foto_urls }).eq('id', editingId);
         if(error) throw error;
         showToast('Post berhasil diperbarui');
       } else {
-        const { error } = await sb.from('posts').insert({ judul, kategori, link, link_download, foto_urls });
+        const { error } = await sb.from('posts').insert({ judul, kategori, tags, link, link_download, foto_urls });
         if(error) throw error;
         showToast('Post berhasil dipublikasikan');
       }
@@ -433,6 +442,7 @@
     document.getElementById('form-title').textContent = 'Edit post';
     document.getElementById('judul-input').value = post.judul;
     document.getElementById('kategori-input').value = post.kategori || '';
+    document.getElementById('tags-input').value = post.tags || '';
     document.getElementById('link-input').value = post.link;
     document.getElementById('download-input').value = post.link_download || '';
     document.getElementById('submit-btn').textContent = 'Simpan perubahan';
@@ -490,6 +500,7 @@
           <div class="post-info">
             <h4>${escapeHtml(p.judul)}</h4>
             <div class="meta">${escapeHtml(p.kategori || 'Umum')} · ${d} · ${(p.foto_urls||[]).length} foto</div>
+            ${p.tags ? `<div class="post-tags">${p.tags.split(',').map(t => `<span class="tag-chip">${escapeHtml(t.trim())}</span>`).join('')}</div>` : ''}
             <div class="post-views">
               <div class="bar"><span class="bar-fill" style="width:${pct}%"></span></div>
               <span class="num">${views} dilihat</span>

@@ -74,6 +74,17 @@ Jika ada pertanyaan seputar privasi, silakan hubungi kami melalui halaman Kontak
     }
     setSeo({ title: 'Privacy Policy', description: 'Kebijakan privasi Yakultind terkait data dan penggunaan situs.' });
   }
+  // Search global di header: cegah reload saat Enter ditekan, arahkan ke pencarian index.
+  const searchFormEl = document.getElementById('global-search-form');
+  const searchInputEl = document.getElementById('global-search-input');
+  if(searchFormEl && searchInputEl){
+    searchFormEl.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const q = searchInputEl.value.trim();
+      if(q) location.href = 'index.html?search=' + encodeURIComponent(q);
+    });
+  }
+
   loadStaticContent();
 </script>
 </body>

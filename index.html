@@ -56,6 +56,7 @@
   <div class="tabs" id="tabs">
     <button class="tab active" data-sort="baru">Terbaru</button>
     <button class="tab" data-sort="lama">Terlama</button>
+    <button class="tab" data-sort="populer">Terpopuler</button>
   </div>
   <div id="grid"></div>
   <div class="pagination" id="pagination"></div>
@@ -75,10 +76,20 @@
   function getFilteredList(){
     let list = [...allPosts];
     if(currentCategory !== 'Semua') list = list.filter(p => (p.kategori || 'Umum') === currentCategory);
-    if(currentSearch) list = list.filter(p => (p.judul || '').toLowerCase().includes(currentSearch.toLowerCase()));
-    list.sort((a,b) => currentSort === 'baru'
-      ? new Date(b.dibuat_pada) - new Date(a.dibuat_pada)
-      : new Date(a.dibuat_pada) - new Date(b.dibuat_pada));
+    if(currentSearch){
+      const q = currentSearch.toLowerCase();
+      list = list.filter(p =>
+        (p.judul || '').toLowerCase().includes(q) ||
+        (p.kategori || '').toLowerCase().includes(q) ||
+        (p.tags || '').toLowerCase().includes(q)
+      );
+    }
+    list.sort((a,b) => {
+      if(currentSort === 'populer') return (b.views || 0) - (a.views || 0);
+      return currentSort === 'baru'
+        ? new Date(b.dibuat_pada) - new Date(a.dibuat_pada)
+        : new Date(a.dibuat_pada) - new Date(b.dibuat_pada);
+    });
     return list;
   }
 
@@ -150,6 +161,26 @@
     currentPage = 1;
     renderPosts();
   };
+
+  // Enter/tombol search di keyboard: selama ini form melakukan submit standar
+  // (reload halaman) karena tidak dicegah — sekarang dicegah dan langsung jalankan pencarian.
+  const searchFormEl = document.getElementById('global-search-form');
+  const searchInputEl = document.getElementById('global-search-input');
+  if(searchFormEl && searchInputEl){
+    searchFormEl.addEventListener('submit', (e) => {
+      e.preventDefault();
+      onSearchChange(searchInputEl.value.trim());
+      searchInputEl.blur();
+    });
+    // Kalau dibuka dari halaman lain lewat index.html?search=..., isi otomatis
+    const searchFromUrl = new URLSearchParams(location.search).get('search');
+    if(searchFromUrl){
+      searchInputEl.value = searchFromUrl;
+      document.getElementById('search-panel').classList.add('open');
+      document.getElementById('search-toggle').setAttribute('aria-expanded', 'true');
+      currentSearch = searchFromUrl;
+    }
+  }
 
   document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
