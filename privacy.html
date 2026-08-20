@@ -42,6 +42,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="search-suggest.js"></script>
 <script>
   const DEFAULT_PRIVACY = `Kebijakan Privasi ini menjelaskan bagaimana Yakultind mengelola informasi pengunjung.
 
@@ -80,9 +81,10 @@ Jika ada pertanyaan seputar privasi, silakan hubungi kami melalui halaman Kontak
   if(searchFormEl && searchInputEl){
     searchFormEl.addEventListener('submit', (e) => {
       e.preventDefault();
+      e.stopImmediatePropagation();
       const q = searchInputEl.value.trim();
       if(q) location.href = 'index.html?search=' + encodeURIComponent(q);
-    });
+    }, true);
   }
 
   loadStaticContent();

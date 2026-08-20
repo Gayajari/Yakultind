@@ -180,6 +180,9 @@
 
       <div class="panel">
         <h2>Semua post</h2>
+        <div class="field" style="margin-bottom:14px;">
+          <input type="text" id="post-search-input" placeholder="Cari judul, kategori, atau tag…" autocomplete="off">
+        </div>
         <div id="post-list"><div class="empty-list">Memuat…</div></div>
       </div>
     </section>
@@ -484,12 +487,17 @@
     const cats = [...new Set(currentPosts.map(p => p.kategori).filter(Boolean))];
     document.getElementById('kategori-list').innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">`).join('');
 
-    if(!currentPosts.length){
+    renderPostList(currentPosts);
+  }
+
+  function renderPostList(list){
+    const listEl = document.getElementById('post-list');
+    if(!list.length){
       listEl.innerHTML = '<div class="empty-list">Belum ada post. Tambahkan lewat form di atas.</div>';
       return;
     }
-    const maxViews = Math.max(0, ...currentPosts.map(p => p.views || 0));
-    listEl.innerHTML = currentPosts.map(p => {
+    const maxViews = Math.max(0, ...list.map(p => p.views || 0));
+    listEl.innerHTML = list.map(p => {
       const cover = (p.foto_urls || [])[0] || '';
       const d = new Date(p.dibuat_pada).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'});
       const views = p.views || 0;
@@ -521,6 +529,19 @@
       row.querySelector('[data-action="delete"]').addEventListener('click', () => deletePost(post));
     });
   }
+
+  // Search global di daftar post: filter judul/kategori/tag secara langsung
+  // saat mengetik, supaya gampang cari post buat diedit tanpa scroll manual.
+  document.getElementById('post-search-input').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    if(!q){ renderPostList(currentPosts); return; }
+    const filtered = currentPosts.filter(p =>
+      (p.judul || '').toLowerCase().includes(q) ||
+      (p.kategori || '').toLowerCase().includes(q) ||
+      (p.tags || '').toLowerCase().includes(q)
+    );
+    renderPostList(filtered);
+  });
 
   /* ---------- FAVICON SETTINGS ---------- */
   let currentFaviconUrl = '';

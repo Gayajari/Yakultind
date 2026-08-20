@@ -66,6 +66,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="search-suggest.js"></script>
 <script>
   let allPosts = [];
   let currentCategory = 'Semua';
@@ -141,10 +142,15 @@
   }
 
   function renderChips(){
-    const cats = ['Semua', ...new Set(allPosts.map(p => p.kategori || 'Umum'))];
-    document.getElementById('chips').innerHTML = cats.map(c =>
-      `<button class="chip ${c === currentCategory ? 'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`
-    ).join('');
+    const cats = [...new Set(allPosts.map(p => p.kategori || 'Umum'))];
+    document.getElementById('chips').innerHTML = `
+      <button class="chip ${currentCategory === 'Semua' ? 'active':''}" data-cat="Semua">Semua</button>
+      <div class="chips-scroll" id="chips-scroll">
+        ${cats.map(c =>
+          `<button class="chip ${c === currentCategory ? 'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`
+        ).join('')}
+      </div>
+    `;
     document.querySelectorAll('.chip').forEach(btn => btn.addEventListener('click', () => {
       currentCategory = btn.dataset.cat;
       currentPage = 1;
@@ -176,9 +182,10 @@
   if(searchFormEl && searchInputEl){
     searchFormEl.addEventListener('submit', (e) => {
       e.preventDefault();
+      e.stopImmediatePropagation();
       onSearchChange(searchInputEl.value.trim());
       searchInputEl.blur();
-    });
+    }, true);
     // Kalau dibuka dari halaman lain lewat index.html?search=..., isi otomatis
     const searchFromUrl = new URLSearchParams(location.search).get('search');
     if(searchFromUrl){
