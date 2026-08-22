@@ -7,6 +7,7 @@
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
 <style>
   :root{
     --cream:#FFF8F0; --ink:#2B2420; --raspberry:#E85D75; --teal:#2A6F6F; --yolk:#F4C95D;
@@ -66,6 +67,11 @@
     background:rgba(20,16,14,0.75); color:#fff; border:none; font-size:14px; line-height:1;
     display:flex; align-items:center; justify-content:center;
   }
+  .photo-slot .crop-photo{
+    position:absolute; bottom:5px; right:5px; width:22px; height:22px; border-radius:50%;
+    background:rgba(20,16,14,0.75); color:#fff; border:none;
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
   .add-photo-slot{
     aspect-ratio:1/1; border-radius:12px; border:1.5px dashed var(--line); background:var(--cream);
     display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;
@@ -73,6 +79,27 @@
   }
   .add-photo-slot:hover{ border-color:var(--raspberry); color:var(--raspberry); }
   .add-photo-slot input{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+  /* ---------- Modal crop foto (bebas atur ukuran, tidak terkunci rasio) ---------- */
+  .crop-modal{
+    display:none; position:fixed; inset:0; background:rgba(20,16,14,0.6);
+    z-index:200; align-items:center; justify-content:center; padding:20px;
+  }
+  .crop-modal.open{ display:flex; }
+  .crop-modal-inner{
+    background:var(--card); border-radius:20px; width:100%; max-width:640px;
+    max-height:88vh; display:flex; flex-direction:column; overflow:hidden;
+  }
+  .crop-modal-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px; border-bottom:1px solid var(--line);
+  }
+  .crop-modal-header h3{ margin:0; font-size:16px; }
+  .crop-canvas-wrap{ flex:1; min-height:280px; max-height:60vh; background:#111; }
+  .crop-canvas-wrap img{ display:block; max-width:100%; }
+  .crop-modal-actions{
+    display:flex; justify-content:flex-end; gap:10px; padding:16px 20px; border-top:1px solid var(--line);
+  }
 
   #form-status{ margin-top:14px; font-size:13px; display:none; }
   #form-status.ok{ color:var(--teal); display:block; }
@@ -91,6 +118,10 @@
   .post-views .num{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:rgba(43,36,32,0.45); flex-shrink:0; }
   .post-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
   .tag-chip{ font-size:10px; padding:2px 8px; border-radius:999px; background:var(--cream); border:1px solid var(--line); color:rgba(43,36,32,0.55); }
+  .manage-row{ display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+  .manage-row:last-child{ border-bottom:none; }
+  .manage-name{ font-weight:500; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .manage-count{ font-family:'JetBrains Mono',monospace; font-size:11px; color:rgba(43,36,32,0.45); flex-shrink:0; }
   .row-actions{ display:flex; gap:6px; flex-shrink:0; }
   .icon-btn{ width:32px; height:32px; border-radius:9px; border:1.5px solid var(--line); background:transparent; display:flex; align-items:center; justify-content:center; color:var(--ink); transition:all .2s; }
   .icon-btn:hover{ border-color:var(--raspberry); color:var(--raspberry); background:rgba(232,93,117,0.06); }
@@ -129,6 +160,7 @@
 
   <div class="tabbar" id="tabbar">
     <button class="btn-ghost active" data-tab="posts">Post</button>
+    <button class="btn-ghost" data-tab="katalog">Kategori & Tag</button>
     <button class="btn-ghost" data-tab="bars">Link Bar</button>
     <button class="btn-ghost" data-tab="footer">Halaman Footer</button>
   </div>
@@ -184,6 +216,20 @@
           <input type="text" id="post-search-input" placeholder="Cari judul, kategori, atau tag…" autocomplete="off">
         </div>
         <div id="post-list"><div class="empty-list">Memuat…</div></div>
+      </div>
+    </section>
+
+    <!-- ===== TAB: KATEGORI & TAG ===== -->
+    <section class="section" id="tab-katalog">
+      <div class="panel">
+        <h2>Kategori</h2>
+        <p class="hint">Kalau ada kategori salah ketik (mis. "Jilbab Viral" yang harusnya masuk "Jilbab"), ganti nama di sini — otomatis berlaku ke semua post yang pakai kategori itu, tidak perlu edit satu-satu.</p>
+        <div id="kategori-manage-list"><div class="empty-list">Memuat…</div></div>
+      </div>
+      <div class="panel">
+        <h2>Tag</h2>
+        <p class="hint">Sama seperti kategori — ganti nama tag di sini untuk membetulkan semua post yang memakainya sekaligus, atau hapus total.</p>
+        <div id="tag-manage-list"><div class="empty-list">Memuat…</div></div>
       </div>
     </section>
 
@@ -287,7 +333,24 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="crop-modal" id="crop-modal">
+  <div class="crop-modal-inner">
+    <div class="crop-modal-header">
+      <h3>Crop foto</h3>
+      <button type="button" class="icon-btn" id="crop-cancel-btn">&times;</button>
+    </div>
+    <div class="crop-canvas-wrap">
+      <img id="crop-image" src="" alt="">
+    </div>
+    <div class="crop-modal-actions">
+      <button type="button" class="nav-btn" id="crop-reset-btn">Reset</button>
+      <button type="button" class="btn-primary" id="crop-save-btn" style="width:auto; padding:11px 22px;">Simpan crop</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script>
   const SUPABASE_URL = "https://agnxigqfdymitvqoapyq.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnbnhpZ3FmZHltaXR2cW9hcHlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NDU2MzgsImV4cCI6MjEwMjUyMTYzOH0.g_BvtGPk7uVNuuhlMz7aYil3ZHfQvw8WPPdWpdQ0G3g";
@@ -296,7 +359,20 @@
 
   let currentPosts = [];
   let photoItems = []; // {file: File|null, url: string|null(existing)|dataUrl(new preview)}
+  let removedPhotoUrls = []; // foto lama yang dihapus admin selama sesi edit — dibersihkan dari storage saat simpan
   let editingId = null;
+
+  function pathFromPublicUrl(url){
+    const marker = `/public/${BUCKET}/`;
+    const idx = url.indexOf(marker);
+    return idx === -1 ? null : url.slice(idx + marker.length);
+  }
+  async function deleteStorageFiles(urls){
+    const paths = (urls || []).map(pathFromPublicUrl).filter(Boolean);
+    if(!paths.length) return;
+    try{ await sb.storage.from(BUCKET).remove(paths); }
+    catch(err){ console.warn('Gagal menghapus file storage:', err); }
+  }
 
   function showToast(msg){
     const t = document.getElementById('toast');
@@ -358,15 +434,26 @@
     grid.innerHTML = photoItems.map((item, i) => `
       <div class="photo-slot">
         <img src="${item.previewUrl}">
+        <button type="button" class="crop-photo" data-i="${i}" title="Crop foto">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>
+        </button>
         <button type="button" class="remove-photo" data-i="${i}">&times;</button>
       </div>
     `).join('') + `
       <label class="add-photo-slot">+
         <input type="file" accept="image/*" id="add-photo-input" multiple>
       </label>`;
+    grid.querySelectorAll('.crop-photo').forEach(btn => {
+      btn.addEventListener('click', () => openCropModal(Number(btn.dataset.i)));
+    });
     grid.querySelectorAll('.remove-photo').forEach(btn => {
       btn.addEventListener('click', () => {
-        photoItems.splice(Number(btn.dataset.i), 1);
+        const i = Number(btn.dataset.i);
+        const item = photoItems[i];
+        // Kalau ini foto lama yang sudah tersimpan di storage (bukan file baru),
+        // catat dulu supaya benar-benar dihapus dari storage setelah form disimpan.
+        if(item && !item.file && item.previewUrl) removedPhotoUrls.push(item.previewUrl);
+        photoItems.splice(i, 1);
         renderPhotoGrid();
       });
     });
@@ -382,6 +469,51 @@
     });
   }
   renderPhotoGrid();
+
+  /* ---------- CROP FOTO (bebas atur ukuran, sebelum upload atau saat edit) ---------- */
+  let cropper = null;
+  let cropTargetIndex = null;
+
+  function openCropModal(index){
+    cropTargetIndex = index;
+    const item = photoItems[index];
+    const modal = document.getElementById('crop-modal');
+    const img = document.getElementById('crop-image');
+    if(cropper){ cropper.destroy(); cropper = null; }
+    img.crossOrigin = 'anonymous';
+    img.src = item.previewUrl;
+    modal.classList.add('open');
+    img.onload = () => {
+      cropper = new Cropper(img, {
+        viewMode: 1,
+        autoCropArea: 1,
+        background: false,
+        responsive: true
+        // aspectRatio sengaja tidak diset -> bebas atur ukuran apa pun (freeform)
+      });
+    };
+  }
+  function closeCropModal(){
+    document.getElementById('crop-modal').classList.remove('open');
+    if(cropper){ cropper.destroy(); cropper = null; }
+    cropTargetIndex = null;
+  }
+  document.getElementById('crop-cancel-btn').addEventListener('click', closeCropModal);
+  document.getElementById('crop-reset-btn').addEventListener('click', () => { if(cropper) cropper.reset(); });
+  document.getElementById('crop-save-btn').addEventListener('click', () => {
+    if(!cropper || cropTargetIndex === null) return;
+    cropper.getCroppedCanvas().toBlob((blob) => {
+      if(!blob) return;
+      const item = photoItems[cropTargetIndex];
+      // Kalau yang di-crop adalah foto lama yang sudah ada di storage,
+      // tandai buat dibersihkan dari storage setelah form disimpan (diganti versi crop baru).
+      if(item && !item.file && item.previewUrl) removedPhotoUrls.push(item.previewUrl);
+      const croppedFile = new File([blob], `crop-${Date.now()}.jpg`, { type:'image/jpeg' });
+      photoItems[cropTargetIndex] = { file: croppedFile, previewUrl: URL.createObjectURL(blob) };
+      renderPhotoGrid();
+      closeCropModal();
+    }, 'image/jpeg', 0.92);
+  });
 
   /* ---------- FORM SUBMIT ---------- */
   document.getElementById('post-form').addEventListener('submit', async (e) => {
@@ -411,6 +543,7 @@
       if(editingId){
         const { error } = await sb.from('posts').update({ judul, kategori, tags, link, link_download, foto_urls }).eq('id', editingId);
         if(error) throw error;
+        await deleteStorageFiles(removedPhotoUrls);
         showToast('Post berhasil diperbarui');
       } else {
         const { error } = await sb.from('posts').insert({ judul, kategori, tags, link, link_download, foto_urls });
@@ -418,6 +551,7 @@
         showToast('Post berhasil dipublikasikan');
       }
 
+      removedPhotoUrls = [];
       cancelEdit();
       document.getElementById('post-form').reset();
       photoItems = []; renderPhotoGrid();
@@ -451,6 +585,7 @@
     document.getElementById('submit-btn').textContent = 'Simpan perubahan';
     document.getElementById('cancel-edit-btn').style.display = 'inline-block';
     photoItems = (post.foto_urls || []).map(url => ({ file:null, previewUrl:url }));
+    removedPhotoUrls = [];
     renderPhotoGrid();
     window.scrollTo({ top:0, behavior:'smooth' });
   }
@@ -462,13 +597,14 @@
   }
   document.getElementById('cancel-edit-btn').addEventListener('click', () => {
     cancelEdit(); document.getElementById('post-form').reset();
-    photoItems = []; renderPhotoGrid();
+    photoItems = []; removedPhotoUrls = []; renderPhotoGrid();
   });
 
   async function deletePost(post){
     if(!confirm(`Hapus post "${post.judul}"? Tindakan ini tidak bisa dibatalkan.`)) return;
     const { error } = await sb.from('posts').delete().eq('id', post.id);
     if(error){ showToast('Gagal hapus: ' + error.message); return; }
+    await deleteStorageFiles(post.foto_urls || []);
     showToast('Post dihapus'); loadPosts();
   }
   function sharePost(post){
@@ -488,6 +624,91 @@
     document.getElementById('kategori-list').innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">`).join('');
 
     renderPostList(currentPosts);
+    renderCategoryManage();
+    renderTagManage();
+  }
+
+  /* ---------- KELOLA KATEGORI & TAG ---------- */
+  function renderCategoryManage(){
+    const el = document.getElementById('kategori-manage-list');
+    const counts = {};
+    currentPosts.forEach(p => {
+      const k = (p.kategori || 'Umum').trim();
+      counts[k] = (counts[k] || 0) + 1;
+    });
+    const entries = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+    if(!entries.length){ el.innerHTML = '<div class="empty-list">Belum ada kategori.</div>'; return; }
+    el.innerHTML = entries.map(([name, count]) => `
+      <div class="manage-row" data-name="${escapeHtml(name)}">
+        <span class="manage-name">${escapeHtml(name)}</span>
+        <span class="manage-count">${count} post</span>
+        <button type="button" class="nav-btn" data-action="rename">Ganti nama</button>
+      </div>
+    `).join('');
+    el.querySelectorAll('[data-action="rename"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const oldName = btn.closest('.manage-row').dataset.name;
+        const newName = prompt(`Ganti kategori "${oldName}" jadi:`, oldName);
+        if(!newName || !newName.trim() || newName.trim() === oldName) return;
+        const { error } = await sb.from('posts').update({ kategori: newName.trim() }).eq('kategori', oldName);
+        if(error){ showToast('Gagal mengubah: ' + error.message); return; }
+        showToast(`Kategori "${oldName}" diganti jadi "${newName.trim()}"`);
+        loadPosts();
+      });
+    });
+  }
+
+  function renderTagManage(){
+    const el = document.getElementById('tag-manage-list');
+    const counts = {};
+    currentPosts.forEach(p => {
+      (p.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
+        counts[t] = (counts[t] || 0) + 1;
+      });
+    });
+    const entries = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+    if(!entries.length){ el.innerHTML = '<div class="empty-list">Belum ada tag.</div>'; return; }
+    el.innerHTML = entries.map(([name, count]) => `
+      <div class="manage-row" data-name="${escapeHtml(name)}">
+        <span class="manage-name">#${escapeHtml(name)}</span>
+        <span class="manage-count">${count} post</span>
+        <button type="button" class="nav-btn" data-action="rename">Ganti nama</button>
+        <button type="button" class="icon-btn danger" data-action="delete" title="Hapus tag ini dari semua post">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </button>
+      </div>
+    `).join('');
+    async function applyTagChange(oldTag, newTagOrNull){
+      const affected = currentPosts.filter(p => (p.tags || '').split(',').map(t => t.trim()).includes(oldTag));
+      for(const p of affected){
+        const newTags = p.tags.split(',').map(t => t.trim())
+          .filter(Boolean)
+          .map(t => t === oldTag ? newTagOrNull : t)
+          .filter(Boolean)
+          .join(', ');
+        await sb.from('posts').update({ tags: newTags || null }).eq('id', p.id);
+      }
+      return affected.length;
+    }
+    el.querySelectorAll('[data-action="rename"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const oldName = btn.closest('.manage-row').dataset.name;
+        const newName = prompt(`Ganti tag "${oldName}" jadi:`, oldName);
+        if(!newName || !newName.trim() || newName.trim() === oldName) return;
+        const n = await applyTagChange(oldName, newName.trim());
+        showToast(`Tag "${oldName}" diganti di ${n} post`);
+        loadPosts();
+      });
+    });
+    el.querySelectorAll('[data-action="delete"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const name = btn.closest('.manage-row').dataset.name;
+        if(!confirm(`Hapus tag "${name}" dari semua post yang memakainya?`)) return;
+        const n = await applyTagChange(name, null);
+        showToast(`Tag "${name}" dihapus dari ${n} post`);
+        loadPosts();
+      });
+    });
   }
 
   function renderPostList(list){

@@ -1,7 +1,7 @@
-/* Rekomendasi/autocomplete untuk kotak pencarian global.
-   File ini berdiri sendiri (tidak mengubah app.js atau logic pencarian yang sudah ada) —
-   cuma nambah dropdown saran di bawah input, dibangun dari kata-kata yang ada di
-   judul, kategori, dan tag semua post. Dipakai bareng di semua halaman. */
+/* Rekomendasi/autocomplete untuk kotak pencarian global — mirip pencarian di aplikasi modern:
+   ketik sebagian nama, muncul daftar post asli (thumbnail + judul), klik salah satu
+   langsung ke halaman watch post itu (tidak perlu Enter/submit dulu).
+   File ini berdiri sendiri, tidak mengubah app.js atau logic pencarian utama yang sudah ada. */
 (function(){
   const form = document.getElementById('global-search-form');
   const input = document.getElementById('global-search-input');
@@ -15,37 +15,26 @@
   let pool = null;
   let poolPromise = null;
 
-  function extractTerms(posts){
-    const set = new Set();
-    (posts || []).forEach(p => {
-      if(p.judul){
-        p.judul.split(/\s+/).forEach(w => {
-          const clean = w.replace(/[^\p{L}\p{N}]/gu, '');
-          if(clean.length >= 3) set.add(clean);
-        });
-      }
-      if(p.kategori) set.add(p.kategori.trim());
-      if(p.tags){
-        p.tags.split(',').forEach(t => {
-          const clean = t.trim();
-          if(clean) set.add(clean);
-        });
-      }
-    });
-    return [...set];
+  function lightweight(posts){
+    return (posts || []).map(p => ({
+      id: p.id,
+      judul: p.judul || '',
+      kategori: p.kategori || '',
+      cover: (p.foto_urls || [])[0] || ''
+    }));
   }
 
   function getPool(){
     if(pool) return Promise.resolve(pool);
     // Kalau halaman ini (index.html) sudah punya data post yang dimuat, pakai itu — tidak perlu fetch lagi.
     if(typeof allPosts !== 'undefined' && allPosts && allPosts.length){
-      pool = extractTerms(allPosts);
+      pool = lightweight(allPosts);
       return Promise.resolve(pool);
     }
     if(poolPromise) return poolPromise;
     if(typeof sb === 'undefined'){ pool = []; return Promise.resolve(pool); }
-    poolPromise = sb.from('posts').select('judul, kategori, tags').limit(300)
-      .then(({ data }) => { pool = extractTerms(data || []); return pool; })
+    poolPromise = sb.from('posts').select('id, judul, kategori, tags, foto_urls').limit(300)
+      .then(({ data }) => { pool = lightweight(data || []); return pool; })
       .catch(() => { pool = []; return pool; });
     return poolPromise;
   }
@@ -55,33 +44,39 @@
     box.innerHTML = '';
   }
 
+  function escapeHtmlLocal(str){
+    return (str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
   function renderSuggestions(matches){
     if(!matches.length){ closeBox(); return; }
-    box.innerHTML = matches.map(m => `<button type="button" class="search-suggest-item">${m}</button>`).join('');
+    box.innerHTML = matches.map(p => `
+      <a class="search-suggest-item" href="watch.html?id=${encodeURIComponent(p.id)}" data-id="${escapeHtmlLocal(p.id)}">
+        <img src="${escapeHtmlLocal(p.cover)}" alt="" loading="lazy">
+        <span class="search-suggest-text">
+          <span class="search-suggest-name">${escapeHtmlLocal(p.judul)}</span>
+          <span class="search-suggest-cat">${escapeHtmlLocal(p.kategori)}</span>
+        </span>
+      </a>
+    `).join('');
     box.classList.add('open');
-    box.querySelectorAll('.search-suggest-item').forEach(btn => {
-      // mousedown (bukan click) supaya jalan duluan sebelum input blur menutup box
-      btn.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        input.value = btn.textContent;
-        closeBox();
-        form.dispatchEvent(new Event('submit', { cancelable: true }));
-      });
-    });
   }
 
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
-    if(q.length < 2){ closeBox(); return; }
+    if(q.length < 1){ closeBox(); return; }
     getPool().then(list => {
       const matches = list
-        .filter(w => w.toLowerCase().includes(q))
+        .filter(p => p.judul.toLowerCase().includes(q) || p.kategori.toLowerCase().includes(q))
         .slice(0, 6);
       renderSuggestions(matches);
     });
   });
 
-  input.addEventListener('focus', () => { getPool(); });
+  input.addEventListener('focus', () => {
+    getPool();
+    if(input.value.trim().length >= 1) input.dispatchEvent(new Event('input'));
+  });
   input.addEventListener('keydown', (e) => {
     if(e.key === 'Escape') closeBox();
   });
