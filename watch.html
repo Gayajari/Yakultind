@@ -5,19 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Memuat… — Yakultind</title>
 <meta name="description" content="Detail postingan di Yakultind.">
-<link rel="canonical" href="https://yakultind.vercel.app/watch.html">
-<meta name="robots" content="index, follow">
-<meta property="og:type" content="article">
-<meta property="og:site_name" content="Yakultind">
-<meta property="og:locale" content="id_ID">
-<meta property="og:title" content="Memuat… — Yakultind">
-<meta property="og:description" content="Detail postingan di Yakultind.">
-<meta property="og:url" content="https://yakultind.vercel.app/watch.html">
-<meta property="og:image" content="https://yakultind.vercel.app/favicon.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Memuat… — Yakultind">
-<meta name="twitter:description" content="Detail postingan di Yakultind.">
-<meta name="twitter:image" content="https://yakultind.vercel.app/favicon.png">
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="style.css">
@@ -27,7 +14,7 @@
 <header class="site-header">
   <div class="header-top">
     <a href="index.html" class="home-btn">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
       Home
     </a>
     <a href="index.html" class="logo">Yakult<em>ind</em></a>
@@ -61,6 +48,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="search-suggest.js"></script>
+<script src="home-back.js"></script>
 <script>
   async function loadPost(){
     const id = new URLSearchParams(window.location.search).get('id');
@@ -88,13 +77,12 @@
     }
 
     const photos = post.foto_urls || [];
+    const tagText = post.tags ? post.tags.split(',').map(t => t.trim()).filter(Boolean).join(', ') : '';
     setSeo({
       title: post.judul,
-      description: `${post.judul} — kategori ${post.kategori || 'Umum'} di Yakultind.`,
-      keywords: `${post.judul}, ${post.kategori || ''}, yakultind`,
-      image: photos[0] || '',
-      url: `https://yakultind.vercel.app/watch.html?id=${id}`,
-      type: 'article'
+      description: `${post.judul} — kategori ${post.kategori || 'Umum'}${tagText ? ` (${tagText})` : ''} di Yakultind.`,
+      keywords: `${post.judul}, ${post.kategori || ''}${tagText ? ', ' + tagText : ''}, yakultind`,
+      image: photos[0] || ''
     });
 
     main.innerHTML = `
@@ -106,6 +94,9 @@
       <div class="watch-meta">
         <span>Dipublikasikan ${fmtDate(post.dibuat_pada)}</span>
       </div>
+      ${tagText ? `<div class="watch-tags">${tagText.split(', ').map(t =>
+        `<a class="watch-tag" href="index.html?search=${encodeURIComponent(t)}">#${escapeHtml(t)}</a>`
+      ).join('')}</div>` : ''}
       <div class="watch-actions">
         <a class="btn-pill" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer">Buka Link</a>
         ${post.link_download ? `<a class="btn-pill ghost" href="${escapeHtml(post.link_download)}" target="_blank" rel="noopener noreferrer">Unduh</a>` : ''}
@@ -159,6 +150,18 @@
           </div>
         </a>`;
     }).join('');
+  }
+
+  // Search global di header: cegah reload saat Enter ditekan, arahkan ke pencarian index.
+  const searchFormEl = document.getElementById('global-search-form');
+  const searchInputEl = document.getElementById('global-search-input');
+  if(searchFormEl && searchInputEl){
+    searchFormEl.addEventListener('submit', (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const q = searchInputEl.value.trim();
+      if(q) location.href = 'index.html?search=' + encodeURIComponent(q);
+    }, true);
   }
 
   loadPost();

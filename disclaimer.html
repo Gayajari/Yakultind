@@ -5,19 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Disclaimer — Yakultind</title>
 <meta name="description" content="Sangkalan dan batasan tanggung jawab konten di Yakultind.">
-<link rel="canonical" href="https://yakultind.vercel.app/disclaimer.html">
-<meta name="robots" content="index, follow">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Yakultind">
-<meta property="og:locale" content="id_ID">
-<meta property="og:title" content="Disclaimer — Yakultind">
-<meta property="og:description" content="Sangkalan dan batasan tanggung jawab konten di Yakultind.">
-<meta property="og:url" content="https://yakultind.vercel.app/disclaimer.html">
-<meta property="og:image" content="https://yakultind.vercel.app/favicon.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Disclaimer — Yakultind">
-<meta name="twitter:description" content="Sangkalan dan batasan tanggung jawab konten di Yakultind.">
-<meta name="twitter:image" content="https://yakultind.vercel.app/favicon.png">
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="style.css">
@@ -55,19 +42,45 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="search-suggest.js"></script>
+<script src="home-back.js"></script>
 <script>
+  const DEFAULT_DISCLAIMER = `Yakultind adalah situs kurasi/agregator yang menampilkan tautan dan gambar yang dikumpulkan dari berbagai sumber di internet.
+
+1. Kami tidak meng-hosting file media secara langsung di server kami; sebagian besar konten mengarah ke sumber pihak ketiga.
+
+2. Kami tidak menjamin keakuratan, kelengkapan, atau legalitas konten yang berasal dari pihak ketiga, dan tidak bertanggung jawab atas isi situs eksternal yang tertaut dari sini.
+
+3. Seluruh kategori dan label pada konten dibuat untuk keperluan navigasi semata, tanpa maksud merendahkan, mencemarkan nama baik, atau menyinggung pihak mana pun.
+
+4. Jika kamu adalah pemilik konten dan keberatan dengan tampilnya materi tertentu di situs ini, silakan hubungi kami melalui halaman Kontak atau ajukan permintaan melalui halaman DMCA — kami akan menindaklanjuti secepatnya.
+
+5. Penggunaan situs ini sepenuhnya menjadi tanggung jawab pengguna masing-masing.`;
+
   async function loadStaticContent(){
     const el = document.getElementById('page-content');
     try{
       const { data, error } = await sb.from('site_settings').select('footer_disclaimer').eq('id', 1).single();
       if(error) throw error;
       const text = data && data.footer_disclaimer;
-      el.textContent = text && text.trim() ? text : 'Konten belum diisi oleh admin.';
+      el.textContent = text && text.trim() ? text : DEFAULT_DISCLAIMER;
     } catch(err){
       el.innerHTML = errorStateHtml('loadStaticContent');
     }
     setSeo({ title: 'Disclaimer', description: 'Sangkalan dan batasan tanggung jawab konten di Yakultind.' });
   }
+  // Search global di header: cegah reload saat Enter ditekan, arahkan ke pencarian index.
+  const searchFormEl = document.getElementById('global-search-form');
+  const searchInputEl = document.getElementById('global-search-input');
+  if(searchFormEl && searchInputEl){
+    searchFormEl.addEventListener('submit', (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const q = searchInputEl.value.trim();
+      if(q) location.href = 'index.html?search=' + encodeURIComponent(q);
+    }, true);
+  }
+
   loadStaticContent();
 </script>
 </body>

@@ -5,19 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Privacy Policy — Yakultind</title>
 <meta name="description" content="Kebijakan privasi Yakultind terkait data dan penggunaan situs.">
-<link rel="canonical" href="https://yakultind.vercel.app/privacy.html">
-<meta name="robots" content="index, follow">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Yakultind">
-<meta property="og:locale" content="id_ID">
-<meta property="og:title" content="Privacy Policy — Yakultind">
-<meta property="og:description" content="Kebijakan privasi Yakultind terkait data dan penggunaan situs.">
-<meta property="og:url" content="https://yakultind.vercel.app/privacy.html">
-<meta property="og:image" content="https://yakultind.vercel.app/favicon.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Privacy Policy — Yakultind">
-<meta name="twitter:description" content="Kebijakan privasi Yakultind terkait data dan penggunaan situs.">
-<meta name="twitter:image" content="https://yakultind.vercel.app/favicon.png">
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="style.css">
@@ -55,19 +42,52 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="search-suggest.js"></script>
+<script src="home-back.js"></script>
 <script>
+  const DEFAULT_PRIVACY = `Kebijakan Privasi ini menjelaskan bagaimana Yakultind mengelola informasi pengunjung.
+
+1. Data yang Dikumpulkan
+Kami tidak meminta pendaftaran akun untuk mengakses konten. Data yang mungkin tercatat secara otomatis meliputi log kunjungan standar (seperti alamat IP, jenis perangkat, dan waktu akses) untuk keperluan keamanan dan analitik dasar.
+
+2. Cookie
+Situs ini dapat menggunakan cookie sederhana untuk menyimpan preferensi tampilan dan mengurangi penghitungan kunjungan ganda. Cookie ini tidak digunakan untuk melacak identitas pribadi.
+
+3. Data dari Formulir Kontak
+Jika kamu menghubungi kami melalui tautan yang tersedia, informasi yang kamu kirimkan hanya digunakan untuk membalas keperluanmu dan tidak dibagikan ke pihak ketiga tanpa izin.
+
+4. Pihak Ketiga
+Situs ini dapat menggunakan layanan pihak ketiga (seperti penyedia hosting) yang memiliki kebijakan privasi masing-masing.
+
+5. Perubahan Kebijakan
+Kebijakan ini dapat diperbarui sewaktu-waktu. Perubahan akan berlaku sejak dipublikasikan di halaman ini.
+
+Jika ada pertanyaan seputar privasi, silakan hubungi kami melalui halaman Kontak.`;
+
   async function loadStaticContent(){
     const el = document.getElementById('page-content');
     try{
       const { data, error } = await sb.from('site_settings').select('footer_privacy').eq('id', 1).single();
       if(error) throw error;
       const text = data && data.footer_privacy;
-      el.textContent = text && text.trim() ? text : 'Konten belum diisi oleh admin.';
+      el.textContent = text && text.trim() ? text : DEFAULT_PRIVACY;
     } catch(err){
       el.innerHTML = errorStateHtml('loadStaticContent');
     }
     setSeo({ title: 'Privacy Policy', description: 'Kebijakan privasi Yakultind terkait data dan penggunaan situs.' });
   }
+  // Search global di header: cegah reload saat Enter ditekan, arahkan ke pencarian index.
+  const searchFormEl = document.getElementById('global-search-form');
+  const searchInputEl = document.getElementById('global-search-input');
+  if(searchFormEl && searchInputEl){
+    searchFormEl.addEventListener('submit', (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const q = searchInputEl.value.trim();
+      if(q) location.href = 'index.html?search=' + encodeURIComponent(q);
+    }, true);
+  }
+
   loadStaticContent();
 </script>
 </body>

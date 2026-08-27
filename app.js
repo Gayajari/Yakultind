@@ -212,7 +212,7 @@ function openLightbox(url){
 }
 
 /* ---------- SEO helper ---------- */
-function setSeo({ title, description, keywords, image, url, type }){
+function setSeo({ title, description, keywords, image }){
   if(title) document.title = title + ' — ' + SITE_NAME;
   const setMeta = (name, content, attr='name') => {
     if(!content) return;
@@ -220,22 +220,11 @@ function setSeo({ title, description, keywords, image, url, type }){
     if(!tag){ tag = document.createElement('meta'); tag.setAttribute(attr, name); document.head.appendChild(tag); }
     tag.setAttribute('content', content);
   };
-  const fullTitle = title ? title + ' — ' + SITE_NAME : null;
   setMeta('description', description);
   setMeta('keywords', keywords);
-  setMeta('og:title', fullTitle, 'property');
+  setMeta('og:title', title, 'property');
   setMeta('og:description', description, 'property');
   if(image) setMeta('og:image', image, 'property');
-  if(url) setMeta('og:url', url, 'property');
-  if(type) setMeta('og:type', type, 'property');
-  setMeta('twitter:title', fullTitle);
-  setMeta('twitter:description', description);
-  if(image) setMeta('twitter:image', image);
-  if(url){
-    let link = document.querySelector('link[rel="canonical"]');
-    if(!link){ link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
-    link.href = url;
-  }
 }
 
 /* ==========================================================
