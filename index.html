@@ -6,6 +6,19 @@
 <title>Yakultind — Galeri Foto &amp; Link</title>
 <meta name="description" content="Yakultind — kumpulan foto dan link terbaru, ditata rapi dan mudah dicari.">
 <meta name="keywords" content="yakultind, galeri foto, kumpulan link, foto dan link">
+<link rel="canonical" href="https://yakultind.vercel.app/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Yakultind">
+<meta property="og:locale" content="id_ID">
+<meta property="og:title" content="Yakultind — Galeri Foto & Link">
+<meta property="og:description" content="Yakultind — kumpulan foto dan link terbaru, ditata rapi dan mudah dicari.">
+<meta property="og:url" content="https://yakultind.vercel.app/">
+<meta property="og:image" content="https://yakultind.vercel.app/favicon.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Yakultind — Galeri Foto & Link">
+<meta name="twitter:description" content="Yakultind — kumpulan foto dan link terbaru, ditata rapi dan mudah dicari.">
+<meta name="twitter:image" content="https://yakultind.vercel.app/favicon.png">
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="style.css">
@@ -15,7 +28,7 @@
 <header class="site-header">
   <div class="header-top">
     <a href="index.html" class="home-btn">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
       Home
     </a>
     <a href="index.html" class="logo">Yakult<em>ind</em></a>
@@ -32,32 +45,15 @@
   <div class="bar-slots" id="bar-slots"></div>
 </header>
 
-<script>
-  /* Menghitung tinggi header secara dinamis untuk offset sticky baris kategori.
-     Hanya urusan tampilan — tidak menyentuh data, routing, atau fungsi lain. */
-  (function(){
-    var headerEl = document.querySelector('.site-header');
-    function setHeaderHeight(){
-      document.documentElement.style.setProperty('--header-h', headerEl.offsetHeight + 'px');
-    }
-    setHeaderHeight();
-    window.addEventListener('resize', setHeaderHeight);
-    window.addEventListener('load', setHeaderHeight);
-    if(window.ResizeObserver){
-      new ResizeObserver(setHeaderHeight).observe(headerEl);
-    }
-  })();
-</script>
-
 <div class="nav-row" id="nav-row"></div>
 
 <main class="wrap">
-  <div class="chips" id="chips"></div>
+  <h1 class="sr-only">Yakultind — Galeri Foto &amp; Kumpulan Link Terbaru</h1>
   <div class="tabs" id="tabs">
     <button class="tab active" data-sort="baru">Terbaru</button>
     <button class="tab" data-sort="lama">Terlama</button>
-    <button class="tab" data-sort="populer">Terpopuler</button>
   </div>
+  <div class="chips" id="chips"></div>
   <div id="grid"></div>
   <div class="pagination" id="pagination"></div>
 </main>
@@ -66,7 +62,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<script src="search-suggest.js"></script>
 <script>
   let allPosts = [];
   let currentCategory = 'Semua';
@@ -77,20 +72,10 @@
   function getFilteredList(){
     let list = [...allPosts];
     if(currentCategory !== 'Semua') list = list.filter(p => (p.kategori || 'Umum') === currentCategory);
-    if(currentSearch){
-      const q = currentSearch.toLowerCase();
-      list = list.filter(p =>
-        (p.judul || '').toLowerCase().includes(q) ||
-        (p.kategori || '').toLowerCase().includes(q) ||
-        (p.tags || '').toLowerCase().includes(q)
-      );
-    }
-    list.sort((a,b) => {
-      if(currentSort === 'populer') return (b.views || 0) - (a.views || 0);
-      return currentSort === 'baru'
-        ? new Date(b.dibuat_pada) - new Date(a.dibuat_pada)
-        : new Date(a.dibuat_pada) - new Date(b.dibuat_pada);
-    });
+    if(currentSearch) list = list.filter(p => (p.judul || '').toLowerCase().includes(currentSearch.toLowerCase()));
+    list.sort((a,b) => currentSort === 'baru'
+      ? new Date(b.dibuat_pada) - new Date(a.dibuat_pada)
+      : new Date(a.dibuat_pada) - new Date(b.dibuat_pada));
     return list;
   }
 
@@ -142,15 +127,10 @@
   }
 
   function renderChips(){
-    const cats = [...new Set(allPosts.map(p => p.kategori || 'Umum'))];
-    document.getElementById('chips').innerHTML = `
-      <button class="chip ${currentCategory === 'Semua' ? 'active':''}" data-cat="Semua">Semua</button>
-      <div class="chips-scroll" id="chips-scroll">
-        ${cats.map(c =>
-          `<button class="chip ${c === currentCategory ? 'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`
-        ).join('')}
-      </div>
-    `;
+    const cats = ['Semua', ...new Set(allPosts.map(p => p.kategori || 'Umum'))];
+    document.getElementById('chips').innerHTML = cats.map(c =>
+      `<button class="chip ${c === currentCategory ? 'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`
+    ).join('');
     document.querySelectorAll('.chip').forEach(btn => btn.addEventListener('click', () => {
       currentCategory = btn.dataset.cat;
       currentPage = 1;
@@ -165,37 +145,8 @@
   window.onSearchChange = function(q){
     currentSearch = q;
     currentPage = 1;
-    // Search harus lintas-kategori: kalau ada kata kunci, jangan dibatasi
-    // chip yang sedang aktif — reset ke Semua supaya hasilnya global.
-    if(q && q.trim()){
-      currentCategory = 'Semua';
-      renderChips();
-    }
     renderPosts();
   };
-
-  // Enter/tombol search di keyboard: selama ini form melakukan submit standar
-  // (reload halaman) karena tidak dicegah — sekarang dicegah dan langsung jalankan pencarian.
-  const searchFormEl = document.getElementById('global-search-form');
-  const searchInputEl = document.getElementById('global-search-input');
-  let forceGlobalSearch = false;
-  if(searchFormEl && searchInputEl){
-    searchFormEl.addEventListener('submit', (e) => {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      onSearchChange(searchInputEl.value.trim());
-      searchInputEl.blur();
-    }, true);
-    // Kalau dibuka dari halaman lain lewat index.html?search=..., isi otomatis
-    const searchFromUrl = new URLSearchParams(location.search).get('search');
-    if(searchFromUrl){
-      searchInputEl.value = searchFromUrl;
-      document.getElementById('search-panel').classList.add('open');
-      document.getElementById('search-toggle').setAttribute('aria-expanded', 'true');
-      currentSearch = searchFromUrl;
-      forceGlobalSearch = true; // dipakai di loadPosts() supaya tidak ketimpa kategori dari cache
-    }
-  }
 
   document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -204,17 +155,6 @@
     currentPage = 1;
     renderPosts();
   }));
-
-  // Tombol Home di header index.html sendiri: reset kategori ke Semua.
-  // Kategori terakhir tetap tersimpan untuk tombol Home di halaman watch/detail,
-  // jadi klik pertama dari sana balik ke kategori yang sedang dibuka, dan klik
-  // kedua (dari index.html) baru balik ke home asli (Semua).
-  const homeBtnTop = document.querySelector('.header-top .home-btn');
-  if(homeBtnTop){
-    homeBtnTop.addEventListener('click', () => {
-      cacheSetState({ category: 'Semua', sort: currentSort, page: 1 });
-    });
-  }
 
   async function loadPosts(){
     const grid = document.getElementById('grid');
@@ -226,7 +166,6 @@
       currentPage = state.page || 1;
       document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.sort === currentSort));
     }
-    if(forceGlobalSearch) currentCategory = 'Semua';
 
     if(cached && cached.posts.length){
       allPosts = cached.posts;
