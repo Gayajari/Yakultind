@@ -38,6 +38,11 @@
   <div class="content" id="page-content"><div class="skel-line w1" style="height:15px;"></div><div class="skel-line" style="margin:14px 0;"></div><div class="skel-line w2" style="margin-left:0;"></div></div>
 </main>
 
+<div class="ad-slot">
+  <iframe sandbox="allow-scripts allow-same-origin" loading="lazy" width="320" height="50" style="border:0;" title="Sponsored"
+    srcdoc="<html><body style='margin:0;background:transparent;overflow:hidden'><script>atOptions={'key':'6ca5307a6ef38e22503075886cf53aad','format':'iframe','height':50,'width':320,'params':{}};</script><script src='https://inputoppose.com/6ca5307a6ef38e22503075886cf53aad/invoke.js'></script></body></html>"></iframe>
+</div>
+
 <div id="site-footer-mount"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -82,6 +87,21 @@
   }
 
   loadStaticContent();
+</script>
+
+<div class="ad-sticky" id="ad-sticky">
+  <button type="button" class="ad-sticky-close" id="ad-sticky-close" aria-label="Tutup iklan">&times;</button>
+  <iframe sandbox="allow-scripts allow-same-origin" width="320" height="50" style="border:0;" title="Sponsored"
+    srcdoc="<html><body style='margin:0;background:transparent;overflow:hidden'><script>atOptions={'key':'6ca5307a6ef38e22503075886cf53aad','format':'iframe','height':50,'width':320,'params':{}};</script><script src='https://inputoppose.com/6ca5307a6ef38e22503075886cf53aad/invoke.js'></script></body></html>"></iframe>
+</div>
+<script>
+  var adStickyCloseBtn = document.getElementById('ad-sticky-close');
+  if(adStickyCloseBtn){
+    adStickyCloseBtn.addEventListener('click', function(){
+      document.getElementById('ad-sticky').style.display = 'none';
+      document.body.style.paddingBottom = '0';
+    });
+  }
 </script>
 </body>
 </html>
