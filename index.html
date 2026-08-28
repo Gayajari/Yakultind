@@ -59,18 +59,12 @@
     <button class="tab" data-sort="populer">Terpopuler</button>
   </div>
 
-  <div class="ad-slot">
-    <iframe sandbox="allow-scripts allow-same-origin" loading="lazy" style="width:100%; height:300px; border:0;" title="Sponsored"
-      srcdoc="<html><body style='margin:0;background:transparent;overflow:hidden'><script async data-cfasync='false' src='https://inputoppose.com/245e769cf203c22c9b8fe4b2394bec6d/invoke.js'></script><div id='container-245e769cf203c22c9b8fe4b2394bec6d'></div></body></html>"></iframe>
-  </div>
+  <div class="ad-slot" data-ad="native"></div>
 
   <div id="grid"></div>
   <div class="pagination" id="pagination"></div>
 
-  <div class="ad-slot">
-    <iframe sandbox="allow-scripts allow-same-origin" loading="lazy" width="320" height="50" style="border:0;" title="Sponsored"
-      srcdoc="<html><body style='margin:0;background:transparent;overflow:hidden'><script>atOptions={'key':'6ca5307a6ef38e22503075886cf53aad','format':'iframe','height':50,'width':320,'params':{}};</script><script src='https://inputoppose.com/6ca5307a6ef38e22503075886cf53aad/invoke.js'></script></body></html>"></iframe>
-  </div>
+  <div class="ad-slot" data-ad="banner50"></div>
 </main>
 
 <div id="site-footer-mount"></div>
@@ -78,6 +72,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script src="search-suggest.js"></script>
+<script src="ads.js"></script>
 <script>
   let allPosts = [];
   let currentCategory = 'Semua';
@@ -265,19 +260,6 @@
   loadPosts();
 </script>
 
-<div class="ad-sticky" id="ad-sticky">
-  <button type="button" class="ad-sticky-close" id="ad-sticky-close" aria-label="Tutup iklan">&times;</button>
-  <iframe sandbox="allow-scripts allow-same-origin" width="320" height="50" style="border:0;" title="Sponsored"
-    srcdoc="<html><body style='margin:0;background:transparent;overflow:hidden'><script>atOptions={'key':'6ca5307a6ef38e22503075886cf53aad','format':'iframe','height':50,'width':320,'params':{}};</script><script src='https://inputoppose.com/6ca5307a6ef38e22503075886cf53aad/invoke.js'></script></body></html>"></iframe>
-</div>
-<script>
-  var adStickyCloseBtn = document.getElementById('ad-sticky-close');
-  if(adStickyCloseBtn){
-    adStickyCloseBtn.addEventListener('click', function(){
-      document.getElementById('ad-sticky').style.display = 'none';
-      document.body.style.paddingBottom = '0';
-    });
-  }
-</script>
+<div id="ad-sticky-mount"></div>
 </body>
 </html>
