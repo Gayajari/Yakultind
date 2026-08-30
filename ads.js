@@ -7,7 +7,10 @@
    1. Slot biasa (inline, di posisi tertentu):
       <div class="ad-slot" data-ad="banner50"></div>   (atau "banner250" / "native")
    2. Sticky banner (nempel di bawah layar, sekali per halaman):
-      <div id="ad-sticky-mount"></div>  — taruh sebelum </body> */
+      <div id="ad-sticky-mount"></div>  — taruh sebelum </body>
+
+   Semua logic dijalankan setelah DOMContentLoaded, supaya aman dipanggil dari
+   <script> di mana pun posisinya di halaman (tidak harus di paling bawah). */
 (function(){
   const ADS = {
     banner50:  { key:'6ca5307a6ef38e22503075886cf53aad', width:320, height:50 },
@@ -40,32 +43,40 @@
     return iframe;
   }
 
-  // Isi semua slot iklan biasa yang ada di halaman ini
-  document.querySelectorAll('.ad-slot[data-ad]').forEach(slot => {
-    const iframe = makeIframe(slot.dataset.ad);
-    if(iframe) slot.appendChild(iframe);
-  });
-
-  // Sticky banner — auto dipasang kalau halaman punya <div id="ad-sticky-mount">
-  const stickyMount = document.getElementById('ad-sticky-mount');
-  if(stickyMount){
-    const wrap = document.createElement('div');
-    wrap.className = 'ad-sticky';
-    wrap.id = 'ad-sticky';
-
-    const closeBtn = document.createElement('button');
-    closeBtn.type = 'button';
-    closeBtn.className = 'ad-sticky-close';
-    closeBtn.setAttribute('aria-label', 'Tutup iklan');
-    closeBtn.innerHTML = '&times;';
-    closeBtn.addEventListener('click', () => {
-      wrap.style.display = 'none';
-      document.body.style.paddingBottom = '0';
+  function init(){
+    // Isi semua slot iklan biasa yang ada di halaman ini
+    document.querySelectorAll('.ad-slot[data-ad]').forEach(slot => {
+      const iframe = makeIframe(slot.dataset.ad);
+      if(iframe) slot.appendChild(iframe);
     });
 
-    const iframe = makeIframe('banner50');
-    wrap.appendChild(closeBtn);
-    if(iframe) wrap.appendChild(iframe);
-    stickyMount.replaceWith(wrap);
+    // Sticky banner — auto dipasang kalau halaman punya <div id="ad-sticky-mount">
+    const stickyMount = document.getElementById('ad-sticky-mount');
+    if(stickyMount){
+      const wrap = document.createElement('div');
+      wrap.className = 'ad-sticky';
+      wrap.id = 'ad-sticky';
+
+      const closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'ad-sticky-close';
+      closeBtn.setAttribute('aria-label', 'Tutup iklan');
+      closeBtn.innerHTML = '&times;';
+      closeBtn.addEventListener('click', () => {
+        wrap.style.display = 'none';
+        document.body.style.paddingBottom = '0';
+      });
+
+      const iframe = makeIframe('banner50');
+      if(iframe) wrap.appendChild(iframe);
+      wrap.appendChild(closeBtn);
+      stickyMount.replaceWith(wrap);
+    }
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init(); // dokumen sudah selesai dimuat duluan (mis. script ditaruh di akhir body)
   }
 })();
