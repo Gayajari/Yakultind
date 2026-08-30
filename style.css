@@ -113,6 +113,9 @@ img{max-width:100%;}
   max-width:1120px; margin:0 auto;
   scrollbar-width:none;
 }
+/* Kalau slot link belum diisi admin (kosong), jangan sisakan jarak kosong —
+   biar elemen setelahnya (misal iklan) menyesuaikan, tidak ada gap lebar nganggur. */
+.bar-slots:empty{ padding:0; margin:0; }
 .bar-slots::-webkit-scrollbar{display:none;}
 .bar-slots a{
   flex-shrink:0;
