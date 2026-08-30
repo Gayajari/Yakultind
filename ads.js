@@ -33,7 +33,7 @@
     iframe.loading = 'lazy';
     iframe.title = 'Sponsored';
     if(ad.native){
-      iframe.style.cssText = 'width:100%; height:300px; border:0;';
+      iframe.style.cssText = 'width:100%; height:420px; border:0;';
     } else {
       iframe.width = ad.width;
       iframe.height = ad.height;
