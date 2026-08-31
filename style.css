@@ -355,13 +355,6 @@ main.wrap{ max-width:1120px; margin:0 auto; padding:0 20px 40px; }
   margin:22px auto; max-width:1120px; padding:0 20px;
   overflow:hidden;
 }
-/* Native Banner: tinggi kotak menentukan berapa kartu iklan yang dirender
-   Adsterra di dalamnya — dibuat lebih pendek khusus di layar HP supaya cuma
-   render 1 kartu (bukan 2 ditumpuk), tetap tinggi di desktop yang sudah pas. */
-.ad-native-frame{ height:360px !important; }
-@media (min-width:900px){
-  .ad-native-frame{ height:420px !important; }
-}
 
 /* Sticky banner 320x50 — nempel di bawah layar, ada di semua halaman */
 body{ padding-bottom:66px; }
