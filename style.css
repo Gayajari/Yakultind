@@ -352,7 +352,7 @@ main.wrap{ max-width:1120px; margin:0 auto; padding:0 20px 40px; }
 /* ---------- Slot iklan (Adsterra) ---------- */
 .ad-slot{
   display:flex; justify-content:center; align-items:center;
-  margin:15px auto; max-width:1120px; padding:0 20px;
+  margin:18px auto; max-width:1120px; padding:0 20px;
   overflow:hidden;
 }
 
