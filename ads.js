@@ -15,7 +15,8 @@
   const ADS = {
     banner50:  { key:'6ca5307a6ef38e22503075886cf53aad', width:320, height:50 },
     banner250: { key:'7dd632ad0425a42886831218dcf14802', width:300, height:250 },
-    native:    { key:'245e769cf203c22c9b8fe4b2394bec6d', native:true }
+    native:    { key:'245e769cf203c22c9b8fe4b2394bec6d', native:true },
+    stickyDesktop: { key:'9185f3cf2c5c810da2b1f2f335ba496e', width:728, height:90 }
   };
 
   function buildSrcdoc(ad){
@@ -33,7 +34,8 @@
     iframe.loading = 'lazy';
     iframe.title = 'Sponsored';
     if(ad.native){
-      iframe.style.cssText = 'width:100%; height:420px; border:0;';
+      iframe.className = 'ad-native-frame';
+      iframe.style.cssText = 'width:100%; border:0;';
     } else {
       iframe.width = ad.width;
       iframe.height = ad.height;
@@ -67,7 +69,9 @@
         document.body.style.paddingBottom = '0';
       });
 
-      const iframe = makeIframe('banner50');
+      // Layar sempit (HP) pakai 320x50, layar lebar (desktop, >=900px) pakai 728x90
+      const stickyAdName = window.innerWidth >= 900 ? 'stickyDesktop' : 'banner50';
+      const iframe = makeIframe(stickyAdName);
       if(iframe) wrap.appendChild(iframe);
       wrap.appendChild(closeBtn);
       stickyMount.replaceWith(wrap);
