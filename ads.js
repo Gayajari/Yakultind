@@ -33,15 +33,29 @@
     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
     iframe.loading = 'lazy';
     iframe.title = 'Sponsored';
-    if(ad.native){
-      iframe.className = 'ad-native-frame';
-      iframe.style.cssText = 'width:100%; border:0;';
-    } else {
-      iframe.width = ad.width;
-      iframe.height = ad.height;
-      iframe.style.cssText = 'border:0;';
-    }
     iframe.srcdoc = buildSrcdoc(ad);
+
+    if(ad.native){
+      const isDesktop = window.innerWidth >= 900;
+      if(isDesktop){
+        // Desktop sudah pas sebagaimana adanya — tidak disentuh.
+        iframe.style.cssText = 'width:100%; height:420px; border:0;';
+        return iframe;
+      }
+      // Mobile: kasih iframe ruang lega di dalam (500px) supaya kartu pertama
+      // PASTI render utuh tanpa kepotong teksnya, lalu crop tampilan luarnya
+      // persis di batas 1 kartu lewat wrapper overflow:hidden — jadi tidak
+      // ada lagi potongan kecil kartu kedua yang ikut nongol.
+      iframe.style.cssText = 'width:100%; height:500px; border:0; display:block;';
+      const crop = document.createElement('div');
+      crop.style.cssText = 'width:100%; height:345px; overflow:hidden; border-radius:12px;';
+      crop.appendChild(iframe);
+      return crop;
+    }
+
+    iframe.width = ad.width;
+    iframe.height = ad.height;
+    iframe.style.cssText = 'border:0;';
     return iframe;
   }
 
