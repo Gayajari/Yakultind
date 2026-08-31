@@ -26,7 +26,7 @@
     return `<html><body style='margin:0;background:transparent;overflow:hidden'><script>atOptions={'key':'${ad.key}','format':'iframe','height':${ad.height},'width':${ad.width},'params':{}};</script><script src='https://inputoppose.com/${ad.key}/invoke.js'></script></body></html>`;
   }
 
-  function makeIframe(adName){
+  function makeIframe(adName, cropHeight){
     const ad = ADS[adName];
     if(!ad) return null;
     const iframe = document.createElement('iframe');
@@ -44,11 +44,12 @@
       }
       // Mobile: kasih iframe ruang lega di dalam (500px) supaya kartu pertama
       // PASTI render utuh tanpa kepotong teksnya, lalu crop tampilan luarnya
-      // persis di batas 1 kartu lewat wrapper overflow:hidden — jadi tidak
-      // ada lagi potongan kecil kartu kedua yang ikut nongol.
+      // persis di batas 1 kartu lewat wrapper overflow:hidden. cropHeight bisa
+      // beda-beda per halaman (lewat atribut data-crop) karena tinggi kartu
+      // asli Adsterra bisa sedikit berbeda tergantung lebar kontainer halaman.
       iframe.style.cssText = 'width:100%; height:500px; border:0; display:block;';
       const crop = document.createElement('div');
-      crop.style.cssText = 'width:100%; height:345px; overflow:hidden; border-radius:12px;';
+      crop.style.cssText = `width:100%; height:${cropHeight || 345}px; overflow:hidden; border-radius:12px;`;
       crop.appendChild(iframe);
       return crop;
     }
@@ -62,7 +63,8 @@
   function init(){
     // Isi semua slot iklan biasa yang ada di halaman ini
     document.querySelectorAll('.ad-slot[data-ad]').forEach(slot => {
-      const iframe = makeIframe(slot.dataset.ad);
+      const cropHeight = slot.dataset.crop ? Number(slot.dataset.crop) : undefined;
+      const iframe = makeIframe(slot.dataset.ad, cropHeight);
       if(iframe) slot.appendChild(iframe);
     });
 
