@@ -516,6 +516,25 @@
   });
 
   /* ---------- FORM SUBMIT ---------- */
+  function slugify(text){
+    return (text || '').toString().toLowerCase().trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-+|-+$)/g, '');
+  }
+
+  async function generateUniqueSlug(judul){
+    const base = slugify(judul) || 'post';
+    let candidate = base;
+    let n = 2;
+    // Cek ke database, kalau slug-nya udah dipakai, tambah angka di belakang
+    while(true){
+      const { data } = await sb.from('posts').select('id').eq('slug', candidate).maybeSingle();
+      if(!data) return candidate;
+      candidate = `${base}-${n}`;
+      n++;
+    }
+  }
+
   document.getElementById('post-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const status = document.getElementById('form-status');
@@ -546,7 +565,8 @@
         await deleteStorageFiles(removedPhotoUrls);
         showToast('Post berhasil diperbarui');
       } else {
-        const { error } = await sb.from('posts').insert({ judul, kategori, tags, link, link_download, foto_urls });
+        const slug = await generateUniqueSlug(judul);
+        const { error } = await sb.from('posts').insert({ judul, kategori, tags, link, link_download, foto_urls, slug });
         if(error) throw error;
         showToast('Post berhasil dipublikasikan');
       }
@@ -608,7 +628,7 @@
     showToast('Post dihapus'); loadPosts();
   }
   function sharePost(post){
-    const url = window.location.origin + window.location.pathname.replace('admin.html','watch.html') + '?id=' + post.id;
+    const url = window.location.origin + window.location.pathname.replace('admin.html','watch.html') + '?id=' + (post.slug || post.id);
     if(navigator.share){ navigator.share({ title: post.judul, url }).catch(() => {}); }
     else { navigator.clipboard.writeText(url).then(() => showToast('Link disalin ke clipboard')); }
   }

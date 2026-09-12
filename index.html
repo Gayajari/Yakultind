@@ -16,7 +16,7 @@
   <div class="header-top">
     <a href="index.html" class="home-btn">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
-      Home
+      <span data-i18n="home">Home</span>
     </a>
     <a href="index.html" class="logo">Yakult<em>ind</em></a>
     <button type="button" class="icon-round" id="search-toggle" aria-label="Pencarian" aria-expanded="false">
@@ -26,7 +26,7 @@
   <div class="search-panel" id="search-panel">
     <form id="global-search-form">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="global-search-input" type="text" placeholder="Pencarian..." autocomplete="off">
+      <input id="global-search-input" type="text" placeholder="Pencarian..." autocomplete="off" data-i18n-placeholder="search_placeholder">
     </form>
   </div>
   <div class="bar-slots" id="bar-slots"></div>
@@ -54,9 +54,9 @@
 <main class="wrap">
   <div class="chips" id="chips"></div>
   <div class="tabs" id="tabs">
-    <button class="tab active" data-sort="baru">Terbaru</button>
-    <button class="tab" data-sort="lama">Terlama</button>
-    <button class="tab" data-sort="populer">Terpopuler</button>
+    <button class="tab active" data-sort="baru" data-i18n="terbaru">Terbaru</button>
+    <button class="tab" data-sort="lama" data-i18n="terlama">Terlama</button>
+    <button class="tab" data-sort="populer" data-i18n="terpopuler">Terpopuler</button>
   </div>
 
   <div class="ad-slot" data-ad="native" data-crop="295"></div>
@@ -71,8 +71,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<script src="search-suggest.js"></script>
 <script src="ads.js"></script>
+<script src="site.js"></script>
 <script>
   let allPosts = [];
   let currentCategory = 'Semua';
@@ -105,18 +105,18 @@
     const cover = photos[0] || '';
     return `
       <article class="card">
-        <a class="thumb" href="watch.html?id=${p.id}">
+        <a class="thumb" href="watch.html?id=${p.slug || p.id}">
           <span class="cat-tag">${escapeHtml(p.kategori || 'Umum')}</span>
-          ${photos.length > 1 ? `<span class="count">${photos.length} foto</span>` : ''}
+          ${photos.length > 1 ? `<span class="count">${photos.length} ${window.t ? t('foto') : 'foto'}</span>` : ''}
           <img src="${cover}" alt="${escapeHtml(p.judul)}" loading="lazy">
         </a>
         <div class="card-body">
-          <h3><a href="watch.html?id=${p.id}">${escapeHtml(p.judul)}</a></h3>
+          <h3><a href="watch.html?id=${p.slug || p.id}">${escapeHtml(p.judul)}</a></h3>
           <div class="card-footer">
             <div class="card-meta">
               <span class="date">${fmtDate(p.dibuat_pada)}</span>
             </div>
-            <a class="btn-pill" href="watch.html?id=${p.id}">Lihat</a>
+            <a class="btn-pill" href="watch.html?id=${p.slug || p.id}">${window.t ? t('lihat') : 'Lihat'}</a>
           </div>
         </div>
       </article>`;
@@ -150,7 +150,7 @@
   function renderChips(){
     const cats = [...new Set(allPosts.map(p => p.kategori || 'Umum'))];
     document.getElementById('chips').innerHTML = `
-      <button class="chip ${currentCategory === 'Semua' ? 'active':''}" data-cat="Semua">Semua</button>
+      <button class="chip ${currentCategory === 'Semua' ? 'active':''}" data-cat="Semua">${window.t ? t('semua') : 'Semua'}</button>
       <div class="chips-scroll" id="chips-scroll">
         ${cats.map(c =>
           `<button class="chip ${c === currentCategory ? 'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`

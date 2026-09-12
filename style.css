@@ -371,3 +371,22 @@ body{ padding-bottom:66px; }
   display:flex; align-items:center; justify-content:center; cursor:pointer;
   box-shadow:0 2px 6px rgba(43,36,32,0.15);
 }
+
+/* ---------- Language switcher ---------- */
+.lang-switcher{
+  display:flex; justify-content:flex-end;
+  padding:0 20px 8px; max-width:1120px; margin:0 auto;
+}
+.lang-switcher select{
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500;
+  padding:5px 10px; border-radius:999px;
+  border:1.5px solid var(--line); background:var(--card); color:var(--ink);
+  cursor:pointer;
+}
+
+/* ---------- RTL (Arab & Urdu) ---------- */
+html[dir="rtl"]{ direction:rtl; }
+html[dir="rtl"] .lang-switcher{ justify-content:flex-start; }
+html[dir="rtl"] .card .cat-tag{ left:auto; right:10px; }
+html[dir="rtl"] .card .thumb .count{ right:auto; left:8px; }
+html[dir="rtl"] .watch-cat{ direction:rtl; }

@@ -15,7 +15,7 @@
   <div class="header-top">
     <a href="index.html" class="home-btn">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
-      Home
+      <span data-i18n="home">Home</span>
     </a>
     <a href="index.html" class="logo">Yakult<em>ind</em></a>
     <button type="button" class="icon-round" id="search-toggle" aria-label="Pencarian" aria-expanded="false">
@@ -25,7 +25,7 @@
   <div class="search-panel" id="search-panel">
     <form id="global-search-form">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="global-search-input" type="text" placeholder="Pencarian..." autocomplete="off">
+      <input id="global-search-input" type="text" placeholder="Pencarian..." autocomplete="off" data-i18n-placeholder="search_placeholder">
     </form>
   </div>
   <div class="bar-slots" id="bar-slots"></div>
@@ -39,10 +39,10 @@
   <div class="skel-line" style="margin:14px 0; margin-left:0;"></div>
 </main>
 
-<div class="ad-slot" data-ad="native"></div>
+<div class="ad-slot" data-ad="native" data-crop="345"></div>
 
 <section class="watch-wrap" id="related-wrap" style="display:none;">
-  <h2 style="font-family:'Fraunces',serif; font-size:20px; margin:10px 0 16px;">Pencarian Terkait</h2>
+  <h2 style="font-family:'Fraunces',serif; font-size:20px; margin:10px 0 16px;" data-i18n="pencarian_terkait">Pencarian Terkait</h2>
   <div id="related-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:14px;"></div>
 </section>
 
@@ -52,9 +52,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
-<script src="search-suggest.js"></script>
 <script src="ads.js"></script>
-<script src="home-back.js"></script>
+<script src="site.js"></script>
 <script>
   async function loadPost(){
     const id = new URLSearchParams(window.location.search).get('id');
@@ -64,9 +63,14 @@
       return;
     }
 
+    // Link lama (yang sudah disebar sebelumnya) pakai UUID panjang, link baru pakai slug
+    // pendek dari judul — dua-duanya harus tetap bisa dibuka, jadi dideteksi dulu formatnya.
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const lookupColumn = isUuid ? 'id' : 'slug';
+
     let post, error;
     try{
-      const res = await sb.from('posts').select('*').eq('id', id).single();
+      const res = await sb.from('posts').select('*').eq(lookupColumn, id).single();
       post = res.data; error = res.error;
     } catch(err){
       error = err;
@@ -97,21 +101,21 @@
       <span class="watch-cat">${escapeHtml(post.kategori || 'Umum')}</span>
       <h1>${escapeHtml(post.judul)}</h1>
       <div class="watch-meta">
-        <span>Dipublikasikan ${fmtDate(post.dibuat_pada)}</span>
+        <span>${window.t ? t('dipublikasikan') : 'Dipublikasikan'} ${fmtDate(post.dibuat_pada)}</span>
       </div>
       ${tagText ? `<div class="watch-tags">${tagText.split(', ').map(t =>
         `<a class="watch-tag" href="index.html?search=${encodeURIComponent(t)}">#${escapeHtml(t)}</a>`
       ).join('')}</div>` : ''}
       <div class="watch-actions">
-        <a class="btn-pill" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer">Buka Link</a>
-        ${post.link_download ? `<a class="btn-pill ghost" href="${escapeHtml(post.link_download)}" target="_blank" rel="noopener noreferrer">Unduh</a>` : ''}
+        <a class="btn-pill" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer">${window.t ? t('buka_link') : 'Buka Link'}</a>
+        ${post.link_download ? `<a class="btn-pill ghost" href="${escapeHtml(post.link_download)}" target="_blank" rel="noopener noreferrer">${window.t ? t('unduh') : 'Unduh'}</a>` : ''}
       </div>
       <div class="bar-slots watch-link-bar" id="watch-link-bar" style="padding-left:0; padding-right:0;"></div>
     `;
 
-    trackView(id);
+    trackView(post.id);
     loadWatchLinkBar();
-    loadRelated(id);
+    loadRelated(post.id);
   }
 
   /* ---------- View counter dengan cooldown 30 menit per post per browser ---------- */
@@ -147,7 +151,7 @@
     document.getElementById('related-grid').innerHTML = related.map(p => {
       const cover = (p.foto_urls || [])[0] || '';
       return `
-        <a class="card" href="watch.html?id=${p.id}" style="display:block;">
+        <a class="card" href="watch.html?id=${p.slug || p.id}" style="display:block;">
           <div class="thumb"><img src="${cover}" alt="${escapeHtml(p.judul)}" loading="lazy"></div>
           <div class="card-body">
             <h3 style="font-size:15px;">${escapeHtml(p.judul)}</h3>
