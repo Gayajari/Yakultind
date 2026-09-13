@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin
+Disallow: /dasbor
+
+Sitemap: https://yakultind.vercel.app/sitemap.xml

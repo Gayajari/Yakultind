@@ -19,6 +19,13 @@ function escapeHtml(str){
 function fmtDate(iso){
   return new Date(iso).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'});
 }
+/* ---------- URL post: /watch/<code> (baru, pendek) dengan fallback ke format lama
+   untuk post yang belum diedit ulang sejak fitur code diaktifkan ---------- */
+function postUrl(p){
+  if(p.code) return `/watch/${p.code}`;
+  if(p.slug) return `watch.html?id=${p.slug}`;
+  return `watch.html?id=${p.id}`;
+}
 
 /* ---------- Ikon bar link: dideteksi otomatis dari nama yang diisi di dashboard ---------- */
 const SOCIAL_ICONS = {
@@ -121,7 +128,7 @@ function initHeader(){
         // Sudah difilter langsung via event 'input', submit cukup ditutup
         if(typeof window.onSearchChange === 'function') window.onSearchChange(q);
       } else {
-        window.location.href = 'index.html' + (q ? ('?q=' + encodeURIComponent(q)) : '');
+        window.location.href = '/' + (q ? ('?q=' + encodeURIComponent(q)) : '');
       }
     });
   }
@@ -182,13 +189,13 @@ function renderFooter(){
   el.innerHTML = `
     <footer class="site-footer">
       <div class="footer-inner">
-        <a href="index.html" class="footer-brand">Yakult<em>ind</em></a>
+        <a href="/" class="footer-brand">Yakult<em>ind</em></a>
         <nav class="footer-links">
-          <a href="kontak.html">Kontak</a>
-          <a href="privacy.html">Privacy Policy</a>
-          <a href="terms.html">Terms</a>
-          <a href="disclaimer.html">Disclaimer</a>
-          <a href="dmca.html">DMCA</a>
+          <a href="/kontak">Kontak</a>
+          <a href="/privacy">Privacy Policy</a>
+          <a href="/terms">Terms</a>
+          <a href="/disclaimer">Disclaimer</a>
+          <a href="/dmca">DMCA</a>
         </nav>
       </div>
       <div class="footer-bottom">&copy; ${new Date().getFullYear()} Yakultind. Semua hak dilindungi.</div>
@@ -212,7 +219,7 @@ function openLightbox(url){
 }
 
 /* ---------- SEO helper ---------- */
-function setSeo({ title, description, keywords, image }){
+function setSeo({ title, description, keywords, image, url, type }){
   if(title) document.title = title + ' — ' + SITE_NAME;
   const setMeta = (name, content, attr='name') => {
     if(!content) return;
@@ -220,11 +227,22 @@ function setSeo({ title, description, keywords, image }){
     if(!tag){ tag = document.createElement('meta'); tag.setAttribute(attr, name); document.head.appendChild(tag); }
     tag.setAttribute('content', content);
   };
+  const fullTitle = title ? title + ' — ' + SITE_NAME : null;
   setMeta('description', description);
   setMeta('keywords', keywords);
-  setMeta('og:title', title, 'property');
+  setMeta('og:title', fullTitle, 'property');
   setMeta('og:description', description, 'property');
   if(image) setMeta('og:image', image, 'property');
+  if(url) setMeta('og:url', url, 'property');
+  if(type) setMeta('og:type', type, 'property');
+  setMeta('twitter:title', fullTitle);
+  setMeta('twitter:description', description);
+  if(image) setMeta('twitter:image', image);
+  if(url){
+    let link = document.querySelector('link[rel="canonical"]');
+    if(!link){ link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
+    link.href = url;
+  }
 }
 
 /* ==========================================================

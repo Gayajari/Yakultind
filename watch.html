@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Memuat… — Yakultind</title>
 <meta name="description" content="Detail postingan di Yakultind.">
+<link rel="canonical" href="https://yakultind.vercel.app/watch.html">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Yakultind">
+<meta property="og:locale" content="id_ID">
+<meta property="og:title" content="Memuat… — Yakultind">
+<meta property="og:description" content="Detail postingan di Yakultind.">
+<meta property="og:url" content="https://yakultind.vercel.app/watch.html">
+<meta property="og:image" content="https://yakultind.vercel.app/favicon.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Memuat… — Yakultind">
+<meta name="twitter:description" content="Detail postingan di Yakultind.">
+<meta name="twitter:image" content="https://yakultind.vercel.app/favicon.png">
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="style.css">
@@ -13,11 +26,11 @@
 
 <header class="site-header">
   <div class="header-top">
-    <a href="index.html" class="home-btn">
+    <a href="/" class="home-btn">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
       <span data-i18n="home">Home</span>
     </a>
-    <a href="index.html" class="logo">Yakult<em>ind</em></a>
+    <a href="/" class="logo">Yakult<em>ind</em></a>
     <button type="button" class="icon-round" id="search-toggle" aria-label="Pencarian" aria-expanded="false">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </button>
@@ -55,22 +68,30 @@
 <script src="ads.js"></script>
 <script src="site.js"></script>
 <script>
-  async function loadPost(){
+  function getPostLookup(){
+    // Format baru (utama): /watch/xxxxxxxx — kode pendek acak di path URL
+    const pathMatch = window.location.pathname.match(/\/watch\/([^/?#]+)\/?$/);
+    if(pathMatch) return { field: 'code', value: decodeURIComponent(pathMatch[1]) };
+
+    // Format lama (backward-compat, link yang sudah disebar sebelumnya):
+    // watch.html?id=<uuid> atau watch.html?id=<slug-dari-judul>
     const id = new URLSearchParams(window.location.search).get('id');
+    if(!id) return null;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    return { field: isUuid ? 'id' : 'slug', value: id };
+  }
+
+  async function loadPost(){
+    const lookup = getPostLookup();
     const main = document.getElementById('watch-main');
-    if(!id){
+    if(!lookup){
       main.innerHTML = '<div class="empty">Post tidak ditemukan.</div>';
       return;
     }
 
-    // Link lama (yang sudah disebar sebelumnya) pakai UUID panjang, link baru pakai slug
-    // pendek dari judul — dua-duanya harus tetap bisa dibuka, jadi dideteksi dulu formatnya.
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    const lookupColumn = isUuid ? 'id' : 'slug';
-
     let post, error;
     try{
-      const res = await sb.from('posts').select('*').eq(lookupColumn, id).single();
+      const res = await sb.from('posts').select('*').eq(lookup.field, lookup.value).single();
       post = res.data; error = res.error;
     } catch(err){
       error = err;
@@ -87,11 +108,16 @@
 
     const photos = post.foto_urls || [];
     const tagText = post.tags ? post.tags.split(',').map(t => t.trim()).filter(Boolean).join(', ') : '';
+    const prettyUrl = post.code
+      ? `https://yakultind.vercel.app/watch/${post.code}`
+      : `https://yakultind.vercel.app/watch.html?id=${post.slug || post.id}`;
     setSeo({
       title: post.judul,
       description: `${post.judul} — kategori ${post.kategori || 'Umum'}${tagText ? ` (${tagText})` : ''} di Yakultind.`,
       keywords: `${post.judul}, ${post.kategori || ''}${tagText ? ', ' + tagText : ''}, yakultind`,
-      image: photos[0] || ''
+      image: photos[0] || '',
+      url: prettyUrl,
+      type: 'article'
     });
 
     main.innerHTML = `
@@ -104,7 +130,7 @@
         <span>${window.t ? t('dipublikasikan') : 'Dipublikasikan'} ${fmtDate(post.dibuat_pada)}</span>
       </div>
       ${tagText ? `<div class="watch-tags">${tagText.split(', ').map(t =>
-        `<a class="watch-tag" href="index.html?search=${encodeURIComponent(t)}">#${escapeHtml(t)}</a>`
+        `<a class="watch-tag" href="/?search=${encodeURIComponent(t)}">#${escapeHtml(t)}</a>`
       ).join('')}</div>` : ''}
       <div class="watch-actions">
         <a class="btn-pill" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer">${window.t ? t('buka_link') : 'Buka Link'}</a>
@@ -151,7 +177,7 @@
     document.getElementById('related-grid').innerHTML = related.map(p => {
       const cover = (p.foto_urls || [])[0] || '';
       return `
-        <a class="card" href="watch.html?id=${p.slug || p.id}" style="display:block;">
+        <a class="card" href="${postUrl(p)}" style="display:block;">
           <div class="thumb"><img src="${cover}" alt="${escapeHtml(p.judul)}" loading="lazy"></div>
           <div class="card-body">
             <h3 style="font-size:15px;">${escapeHtml(p.judul)}</h3>
@@ -169,7 +195,7 @@
       e.preventDefault();
       e.stopImmediatePropagation();
       const q = searchInputEl.value.trim();
-      if(q) location.href = 'index.html?search=' + encodeURIComponent(q);
+      if(q) location.href = '/?search=' + encodeURIComponent(q);
     }, true);
   }
 

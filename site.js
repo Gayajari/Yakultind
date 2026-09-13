@@ -178,6 +178,7 @@
     return (posts || []).map(p => ({
       id: p.id,
       slug: p.slug || '',
+      code: p.code || '',
       judul: p.judul || '',
       kategori: p.kategori || '',
       cover: (p.foto_urls || [])[0] || ''
@@ -193,7 +194,7 @@
     }
     if(poolPromise) return poolPromise;
     if(typeof sb === 'undefined'){ pool = []; return Promise.resolve(pool); }
-    poolPromise = sb.from('posts').select('id, judul, kategori, tags, foto_urls, slug').limit(300)
+    poolPromise = sb.from('posts').select('id, judul, kategori, tags, foto_urls, slug, code').limit(300)
       .then(({ data }) => { pool = lightweight(data || []); return pool; })
       .catch(() => { pool = []; return pool; });
     return poolPromise;
@@ -211,7 +212,7 @@
   function renderSuggestions(matches){
     if(!matches.length){ closeBox(); return; }
     box.innerHTML = matches.map(p => `
-      <a class="search-suggest-item" href="watch.html?id=${encodeURIComponent(p.slug || p.id)}" data-id="${escapeHtmlLocal(p.id)}">
+      <a class="search-suggest-item" href="${postUrl(p)}" data-id="${escapeHtmlLocal(p.id)}">
         <img src="${escapeHtmlLocal(p.cover)}" alt="" loading="lazy">
         <span class="search-suggest-text">
           <span class="search-suggest-name">${escapeHtmlLocal(p.judul)}</span>
@@ -249,7 +250,7 @@
    (index.html sudah punya logic sendiri: reset kategori ke Semua kalau tombol Home diklik dari sana). */
 (function(){
   const path = location.pathname.split('/').pop();
-  if(path === '' || path === 'index.html') return; // biar tidak bentrok sama logic Home di index.html
+  if(path === '' || path === 'index.html' || path === 'home' || path === 'index') return; // biar tidak bentrok sama logic Home di index.html
 
   const homeBtn = document.querySelector('.home-btn');
   if(!homeBtn) return;
