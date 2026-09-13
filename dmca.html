@@ -2,22 +2,10 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<base href="/">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DMCA — Yakultind</title>
 <meta name="description" content="Kebijakan DMCA dan prosedur pengaduan hak cipta Yakultind.">
-<link rel="canonical" href="https://yakultind.vercel.app/dmca">
-<meta name="robots" content="index, follow">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Yakultind">
-<meta property="og:locale" content="id_ID">
-<meta property="og:title" content="DMCA — Yakultind">
-<meta property="og:description" content="Kebijakan DMCA dan prosedur pengaduan hak cipta Yakultind.">
-<meta property="og:url" content="https://yakultind.vercel.app/dmca">
-<meta property="og:image" content="https://yakultind.vercel.app/favicon.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="DMCA — Yakultind">
-<meta name="twitter:description" content="Kebijakan DMCA dan prosedur pengaduan hak cipta Yakultind.">
-<meta name="twitter:image" content="https://yakultind.vercel.app/favicon.png">
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="style.css">
@@ -26,11 +14,11 @@
 
 <header class="site-header">
   <div class="header-top">
-    <a href="/" class="home-btn">
+    <a href="index.html" class="home-btn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
-      Home
+      <span data-i18n="home">Home</span>
     </a>
-    <a href="/" class="logo">Yakult<em>ind</em></a>
+    <a href="index.html" class="logo">Yakult<em>ind</em></a>
     <button type="button" class="icon-round" id="search-toggle" aria-label="Pencarian" aria-expanded="false">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </button>
@@ -38,7 +26,7 @@
   <div class="search-panel" id="search-panel">
     <form id="global-search-form">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="global-search-input" type="text" placeholder="Pencarian..." autocomplete="off">
+      <input id="global-search-input" type="text" placeholder="Pencarian..." autocomplete="off" data-i18n-placeholder="search_placeholder">
     </form>
   </div>
   <div class="bar-slots" id="bar-slots"></div>
@@ -51,24 +39,57 @@
   <div class="content" id="page-content"><div class="skel-line w1" style="height:15px;"></div><div class="skel-line" style="margin:14px 0;"></div><div class="skel-line w2" style="margin-left:0;"></div></div>
 </main>
 
+<div class="ad-slot" data-ad="banner50"></div>
+
 <div id="site-footer-mount"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="ads.js"></script>
+<script src="site.js"></script>
 <script>
+  const DEFAULT_DMCA = `Yakultind menghormati hak kekayaan intelektual pihak lain dan akan menanggapi laporan pelanggaran hak cipta yang sah sesuai prosedur DMCA (Digital Millennium Copyright Act) atau ketentuan serupa yang berlaku.
+
+Jika kamu merasa ada konten di situs ini yang melanggar hak cipta milikmu, kirimkan laporan resmi yang mencantumkan:
+
+1. Identifikasi karya berhak cipta yang diklaim dilanggar.
+2. URL atau lokasi pasti konten yang dilaporkan di situs ini.
+3. Informasi kontak kamu (nama, email, dan/atau nomor telepon).
+4. Pernyataan bahwa kamu memiliki itikad baik bahwa penggunaan konten tersebut tidak diizinkan oleh pemilik hak, agennya, atau hukum yang berlaku.
+5. Pernyataan bahwa informasi dalam laporan ini akurat, dan bahwa kamu adalah pemilik hak cipta atau berwenang bertindak atas nama pemilik hak cipta.
+6. Tanda tangan fisik atau elektronik dari pemilik hak cipta atau pihak yang berwenang.
+
+Kirimkan laporan melalui halaman Kontak kami.
+
+Kami akan meninjau setiap laporan yang valid dan menghapus atau menonaktifkan akses ke konten yang dilaporkan dalam waktu yang wajar setelah verifikasi.`;
+
   async function loadStaticContent(){
     const el = document.getElementById('page-content');
     try{
       const { data, error } = await sb.from('site_settings').select('footer_dmca').eq('id', 1).single();
       if(error) throw error;
       const text = data && data.footer_dmca;
-      el.textContent = text && text.trim() ? text : 'Konten belum diisi oleh admin.';
+      el.textContent = text && text.trim() ? text : DEFAULT_DMCA;
     } catch(err){
       el.innerHTML = errorStateHtml('loadStaticContent');
     }
     setSeo({ title: 'DMCA', description: 'Kebijakan DMCA dan prosedur pengaduan hak cipta Yakultind.' });
   }
+  // Search global di header: cegah reload saat Enter ditekan, arahkan ke pencarian index.
+  const searchFormEl = document.getElementById('global-search-form');
+  const searchInputEl = document.getElementById('global-search-input');
+  if(searchFormEl && searchInputEl){
+    searchFormEl.addEventListener('submit', (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const q = searchInputEl.value.trim();
+      if(q) location.href = 'index.html?search=' + encodeURIComponent(q);
+    }, true);
+  }
+
   loadStaticContent();
 </script>
+
+<div id="ad-sticky-mount"></div>
 </body>
 </html>

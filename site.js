@@ -28,7 +28,7 @@
       pencarian_terkait: 'Pencarian Terkait',
       kontak_kosong: 'Kontak belum diatur oleh admin.',
       dipublikasikan: 'Dipublikasikan',
-      lang_name: 'Indonesia'
+      lang_name: '🇮🇩 Indonesia'
     },
     en: {
       home: 'Home',
@@ -44,7 +44,7 @@
       pencarian_terkait: 'Related Posts',
       kontak_kosong: 'Contact info not set up yet.',
       dipublikasikan: 'Published',
-      lang_name: 'English'
+      lang_name: '🇬🇧 English'
     },
     ar: {
       home: 'الرئيسية',
@@ -60,7 +60,7 @@
       pencarian_terkait: 'منشورات ذات صلة',
       kontak_kosong: 'لم يتم إعداد معلومات الاتصال بعد.',
       dipublikasikan: 'نُشر في',
-      lang_name: 'العربية'
+      lang_name: '🇸🇦 العربية'
     },
     ur: {
       home: 'ہوم',
@@ -76,7 +76,7 @@
       pencarian_terkait: 'متعلقہ پوسٹس',
       kontak_kosong: 'رابطہ کی معلومات ابھی ترتیب نہیں دی گئی۔',
       dipublikasikan: 'شائع شدہ',
-      lang_name: 'اردو'
+      lang_name: '🇵🇰 اردو'
     }
   };
 
@@ -178,7 +178,6 @@
     return (posts || []).map(p => ({
       id: p.id,
       slug: p.slug || '',
-      code: p.code || '',
       judul: p.judul || '',
       kategori: p.kategori || '',
       cover: (p.foto_urls || [])[0] || ''
@@ -194,7 +193,7 @@
     }
     if(poolPromise) return poolPromise;
     if(typeof sb === 'undefined'){ pool = []; return Promise.resolve(pool); }
-    poolPromise = sb.from('posts').select('id, judul, kategori, tags, foto_urls, slug, code').limit(300)
+    poolPromise = sb.from('posts').select('id, judul, kategori, tags, foto_urls, slug').limit(300)
       .then(({ data }) => { pool = lightweight(data || []); return pool; })
       .catch(() => { pool = []; return pool; });
     return poolPromise;
@@ -212,7 +211,7 @@
   function renderSuggestions(matches){
     if(!matches.length){ closeBox(); return; }
     box.innerHTML = matches.map(p => `
-      <a class="search-suggest-item" href="${postUrl(p)}" data-id="${escapeHtmlLocal(p.id)}">
+      <a class="search-suggest-item" href="/watch/${encodeURIComponent(p.short_code || p.slug || p.id)}" data-id="${escapeHtmlLocal(p.id)}">
         <img src="${escapeHtmlLocal(p.cover)}" alt="" loading="lazy">
         <span class="search-suggest-text">
           <span class="search-suggest-name">${escapeHtmlLocal(p.judul)}</span>
@@ -250,7 +249,7 @@
    (index.html sudah punya logic sendiri: reset kategori ke Semua kalau tombol Home diklik dari sana). */
 (function(){
   const path = location.pathname.split('/').pop();
-  if(path === '' || path === 'index.html' || path === 'home' || path === 'index') return; // biar tidak bentrok sama logic Home di index.html
+  if(path === '' || path === 'index.html') return; // biar tidak bentrok sama logic Home di index.html
 
   const homeBtn = document.querySelector('.home-btn');
   if(!homeBtn) return;

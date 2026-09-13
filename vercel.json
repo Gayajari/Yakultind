@@ -1,14 +1,6 @@
 {
+  "cleanUrls": true,
   "rewrites": [
-    { "source": "/watch/:code", "destination": "/watch.html" },
-    { "source": "/home", "destination": "/index.html" },
-    { "source": "/index", "destination": "/index.html" },
-    { "source": "/kontak", "destination": "/kontak.html" },
-    { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/disclaimer", "destination": "/disclaimer.html" },
-    { "source": "/dmca", "destination": "/dmca.html" },
-    { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/dasbor", "destination": "/admin.html" }
+    { "source": "/watch/:code", "destination": "/watch.html" }
   ]
 }
