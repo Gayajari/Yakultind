@@ -647,12 +647,12 @@
     showToast('Post dihapus'); loadPosts();
   }
   function sharePost(post){
-    // Format baru (pendek, tanpa .html): /watch/kode-acak
+    // Format terbaru (paling pendek & profesional): /w/kode-acak
     // Fallback ke format lama kalau post ini belum punya short_code (jarang terjadi,
     // cuma untuk jaga-jaga sebelum migrasi SQL dijalankan).
     const url = post.short_code
-      ? window.location.origin + '/watch/' + post.short_code
-      : window.location.origin + '/watch.html?id=' + (post.slug || post.id);
+      ? window.location.origin + '/w/' + post.short_code
+      : window.location.origin + '/watch?id=' + (post.slug || post.id);
     if(navigator.share){ navigator.share({ title: post.judul, url }).catch(() => {}); }
     else { navigator.clipboard.writeText(url).then(() => showToast('Link disalin ke clipboard')); }
   }

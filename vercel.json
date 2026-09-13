@@ -1,6 +1,7 @@
 {
   "cleanUrls": true,
   "rewrites": [
+    { "source": "/w/:code", "destination": "/watch" },
     { "source": "/watch/:code", "destination": "/watch" }
   ]
 }

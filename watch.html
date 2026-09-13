@@ -14,11 +14,11 @@
 
 <header class="site-header">
   <div class="header-top">
-    <a href="index.html" class="home-btn">
+    <a href="/" class="home-btn">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
       <span data-i18n="home">Home</span>
     </a>
-    <a href="index.html" class="logo">Yakult<em>ind</em></a>
+    <a href="/" class="logo">Yakult<em>ind</em></a>
     <button type="button" class="icon-round" id="search-toggle" aria-label="Pencarian" aria-expanded="false">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </button>
@@ -57,9 +57,10 @@
 <script src="site.js"></script>
 <script>
   async function loadPost(){
-    // Format baru (path, tanpa .html): /watch/kode-acak — dibaca dari path URL.
-    // Format lama (masih harus tetap jalan): watch.html?id=slug-atau-uuid — dari query string.
-    const pathMatch = window.location.pathname.match(/\/watch\/([^\/?#]+)/i);
+    // Format terbaru (paling pendek): /w/kode-acak — dibaca dari path URL.
+    // Format sebelumnya (tetap harus jalan, sudah kadung dibagikan): /watch/kode-acak.
+    // Format paling lama (masih harus tetap jalan): watch.html?id=slug-atau-uuid — dari query string.
+    const pathMatch = window.location.pathname.match(/\/(?:w|watch)\/([^\/?#]+)/i);
     const id = (pathMatch && pathMatch[1]) || new URLSearchParams(window.location.search).get('id');
     const main = document.getElementById('watch-main');
     if(!id){
@@ -117,7 +118,7 @@
         <span>${window.t ? t('dipublikasikan') : 'Dipublikasikan'} ${fmtDate(post.dibuat_pada)}</span>
       </div>
       ${tagText ? `<div class="watch-tags">${tagText.split(', ').map(t =>
-        `<a class="watch-tag" href="index.html?search=${encodeURIComponent(t)}">#${escapeHtml(t)}</a>`
+        `<a class="watch-tag" href="/?search=${encodeURIComponent(t)}">#${escapeHtml(t)}</a>`
       ).join('')}</div>` : ''}
       <div class="watch-actions">
         <a class="btn-pill" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer">${window.t ? t('buka_link') : 'Buka Link'}</a>
@@ -164,7 +165,7 @@
     document.getElementById('related-grid').innerHTML = related.map(p => {
       const cover = (p.foto_urls || [])[0] || '';
       return `
-        <a class="card" href="/watch/${p.short_code || p.slug || p.id}" style="display:block;">
+        <a class="card" href="/w/${p.short_code || p.slug || p.id}" style="display:block;">
           <div class="thumb"><img src="${cover}" alt="${escapeHtml(p.judul)}" loading="lazy"></div>
           <div class="card-body">
             <h3 style="font-size:15px;">${escapeHtml(p.judul)}</h3>
@@ -182,7 +183,7 @@
       e.preventDefault();
       e.stopImmediatePropagation();
       const q = searchInputEl.value.trim();
-      if(q) location.href = 'index.html?search=' + encodeURIComponent(q);
+      if(q) location.href = '/?search=' + encodeURIComponent(q);
     }, true);
   }
 

@@ -211,7 +211,7 @@
   function renderSuggestions(matches){
     if(!matches.length){ closeBox(); return; }
     box.innerHTML = matches.map(p => `
-      <a class="search-suggest-item" href="/watch/${encodeURIComponent(p.short_code || p.slug || p.id)}" data-id="${escapeHtmlLocal(p.id)}">
+      <a class="search-suggest-item" href="/w/${encodeURIComponent(p.short_code || p.slug || p.id)}" data-id="${escapeHtmlLocal(p.id)}">
         <img src="${escapeHtmlLocal(p.cover)}" alt="" loading="lazy">
         <span class="search-suggest-text">
           <span class="search-suggest-name">${escapeHtmlLocal(p.judul)}</span>
