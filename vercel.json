@@ -3,5 +3,8 @@
   "rewrites": [
     { "source": "/w/:code", "destination": "/watch" },
     { "source": "/watch/:code", "destination": "/watch" }
+  ],
+  "crons": [
+    { "path": "/api/keep-alive", "schedule": "0 3 */3 * *" }
   ]
 }
