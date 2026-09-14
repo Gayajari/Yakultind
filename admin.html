@@ -32,6 +32,24 @@
   @media (min-width:640px){ .field input, .field textarea{ font-size:14.5px; } }
   .field input:focus, .field textarea:focus{ border-color:var(--raspberry); box-shadow:0 0 0 4px rgba(232,93,117,0.14); }
   .field textarea{ resize:vertical; min-height:110px; font-size:14px; line-height:1.6; }
+
+  /* Search di panel "Semua post" — sengaja lebih kecil/simpel dari field form lain */
+  #post-search-input{ padding:8px 13px; font-size:13px; max-width:260px; }
+  @media (min-width:640px){ #post-search-input{ font-size:12.5px; } }
+
+  /* Tab sort Terbaru/Terlama/Terpopuler — versi kecil, konsisten sama gaya situs utama */
+  .admin-sort-tabs{
+    display:flex; gap:4px; padding:3px; background:var(--cream);
+    border:1px solid var(--line); border-radius:999px; width:fit-content;
+    margin-bottom:10px;
+  }
+  .admin-sort-tab{
+    padding:5px 12px; border-radius:999px; border:none; background:transparent;
+    font-size:11px; font-weight:500; color:rgba(43,36,32,0.55); cursor:pointer;
+    font-family:inherit; transition:all .2s;
+  }
+  .admin-sort-tab.active{ background:var(--ink); color:var(--card); }
+  .admin-sort-tab:not(.active):hover{ color:var(--raspberry); }
   .btn-primary{ width:100%; padding:14px; border:none; border-radius:999px; background:var(--ink); color:var(--cream); font-size:14.5px; font-weight:600; transition:background .2s, opacity .2s; }
   .btn-primary:hover{ background:var(--raspberry); }
   .btn-primary:disabled{ opacity:0.5; cursor:default; }
@@ -213,8 +231,13 @@
 
       <div class="panel">
         <h2>Semua post</h2>
-        <div class="field" style="margin-bottom:14px;">
-          <input type="text" id="post-search-input" placeholder="Cari judul, kategori, atau tag…" autocomplete="off">
+        <div class="admin-sort-tabs" id="admin-sort-tabs">
+          <button type="button" class="admin-sort-tab active" data-sort="baru">Terbaru</button>
+          <button type="button" class="admin-sort-tab" data-sort="lama">Terlama</button>
+          <button type="button" class="admin-sort-tab" data-sort="populer">Terpopuler</button>
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <input type="text" id="post-search-input" placeholder="Pencarian" autocomplete="off">
         </div>
         <div id="post-list"><div class="empty-list">Memuat…</div></div>
       </div>
@@ -359,6 +382,7 @@
   const BUCKET = 'foto-post';
 
   let currentPosts = [];
+  let currentAdminSort = 'baru';
   let photoItems = []; // {file: File|null, url: string|null(existing)|dataUrl(new preview)}
   let removedPhotoUrls = []; // foto lama yang dihapus admin selama sesi edit — dibersihkan dari storage saat simpan
   let editingId = null;
@@ -667,7 +691,7 @@
     const cats = [...new Set(currentPosts.map(p => p.kategori).filter(Boolean))];
     document.getElementById('kategori-list').innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">`).join('');
 
-    renderPostList(currentPosts);
+    renderFilteredSortedPosts();
     renderCategoryManage();
     renderTagManage();
   }
@@ -795,17 +819,37 @@
     });
   }
 
-  // Search global di daftar post: filter judul/kategori/tag secara langsung
-  // saat mengetik, supaya gampang cari post buat diedit tanpa scroll manual.
-  document.getElementById('post-search-input').addEventListener('input', (e) => {
-    const q = e.target.value.trim().toLowerCase();
-    if(!q){ renderPostList(currentPosts); return; }
-    const filtered = currentPosts.filter(p =>
-      (p.judul || '').toLowerCase().includes(q) ||
-      (p.kategori || '').toLowerCase().includes(q) ||
-      (p.tags || '').toLowerCase().includes(q)
-    );
-    renderPostList(filtered);
+  // Search + sort di daftar post: dua-duanya digabung jadi satu fungsi supaya
+  // konsisten — cari lewat judul/kategori/tag, lalu urutkan sesuai tab aktif
+  // (Terbaru/Terlama/Terpopuler). Terpopuler pakai kolom views, jadi gampang
+  // dipakai buat ngecek post mana yang paling banyak dilihat.
+  function renderFilteredSortedPosts(){
+    const q = document.getElementById('post-search-input').value.trim().toLowerCase();
+    let list = q
+      ? currentPosts.filter(p =>
+          (p.judul || '').toLowerCase().includes(q) ||
+          (p.kategori || '').toLowerCase().includes(q) ||
+          (p.tags || '').toLowerCase().includes(q))
+      : [...currentPosts];
+
+    list.sort((a, b) => {
+      if(currentAdminSort === 'populer') return (b.views || 0) - (a.views || 0);
+      return currentAdminSort === 'lama'
+        ? new Date(a.dibuat_pada) - new Date(b.dibuat_pada)
+        : new Date(b.dibuat_pada) - new Date(a.dibuat_pada);
+    });
+    renderPostList(list);
+  }
+
+  document.getElementById('post-search-input').addEventListener('input', renderFilteredSortedPosts);
+
+  document.querySelectorAll('.admin-sort-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.admin-sort-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentAdminSort = tab.dataset.sort;
+      renderFilteredSortedPosts();
+    });
   });
 
   /* ---------- FAVICON SETTINGS ---------- */
