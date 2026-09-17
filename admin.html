@@ -129,11 +129,12 @@
     display:flex; align-items:center; gap:7px;
   }
   .crop-close-btn{
-    position:absolute; top:14px; right:14px;
+    position:fixed; top:calc(env(safe-area-inset-top, 0px) + 14px); right:14px;
     width:28px; height:28px; border-radius:50%;
     background:var(--cream); border:1.5px solid var(--line); color:var(--ink);
-    cursor:pointer; padding:0; margin:0;
+    cursor:pointer; padding:0; margin:0; z-index:210;
     display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 12px rgba(43,36,32,0.2);
   }
   .crop-close-btn:active{ border-color:var(--raspberry); color:var(--raspberry); }
   .crop-stage-wrap{ display:flex; justify-content:center; margin-bottom:12px; }
@@ -670,9 +671,20 @@
   }
 
   function setupCropStageSize() {
-    const stageW = Math.min(CROP_STAGE_MAX_W, window.innerWidth - 64);
+    let stageW = Math.min(CROP_STAGE_MAX_W, window.innerWidth - 64);
     const ratio = cropRatio > 0 ? cropRatio : (cropNaturalW / cropNaturalH);
-    const stageH = stageW / ratio;
+    let stageH = stageW / ratio;
+
+    // Batasi tinggi maksimal kotak crop supaya kontrol di bawahnya (chip rasio,
+    // slider zoom, tombol) tetap kelihatan tanpa scroll jauh — penting buat foto
+    // sangat tinggi/sempit gaya TikTok (9:16 atau lebih ekstrem). Lebar ikut
+    // diciutkan sebanding supaya rasio aslinya tetap benar, bukan distorsi.
+    const maxStageH = Math.max(220, window.innerHeight * 0.42);
+    if(stageH > maxStageH){
+      stageH = maxStageH;
+      stageW = stageH * ratio;
+    }
+
     cropStage.style.width = stageW + "px";
     cropStage.style.height = stageH + "px";
   }
