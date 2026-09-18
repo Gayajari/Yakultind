@@ -1,102 +1,878 @@
-/* ads.js — satu sumber untuk semua unit iklan Adsterra yang dipakai berulang
-   di banyak halaman (sticky banner + banner 320x50 + banner 300x250 + native banner).
-   Ganti key/ukuran cukup di sini kalau perlu update — tidak perlu edit satu-satu
-   di tiap file HTML.
+// ============================================================
+// NOKT HUB — Admin Dashboard Logic
+// ============================================================
+import {
+  auth, db, onAuthStateChanged, collection, doc, getDoc, getDocs, addDoc,
+  setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp,
+  deleteField
+} from "./firebase-config.js";
+import { resolveCategoryIcon, iconSvg, allIconIds, ICON_LIBRARY } from "./icons.js";
 
-   Cara pakai di HTML:
-   1. Slot biasa (inline, di posisi tertentu):
-      <div class="ad-slot" data-ad="banner50"></div>   (atau "banner250" / "native")
-   2. Sticky banner (nempel di bawah layar, sekali per halaman):
-      <div id="ad-sticky-mount"></div>  — taruh sebelum </body>
+function slugify(str) {
+  return str.toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
 
-   Semua logic dijalankan setelah DOMContentLoaded, supaya aman dipanggil dari
-   <script> di mana pun posisinya di halaman (tidak harus di paling bawah). */
-(function(){
-  const ADS = {
-    banner50:  { key:'6ca5307a6ef38e22503075886cf53aad', width:320, height:50 },
-    banner250: { key:'7dd632ad0425a42886831218dcf14802', width:300, height:250 },
-    native:    { key:'245e769cf203c22c9b8fe4b2394bec6d', native:true },
-    stickyDesktop: { key:'9185f3cf2c5c810da2b1f2f335ba496e', width:728, height:90 }
-  };
-
-  function buildSrcdoc(ad){
-    if(ad.native){
-      return `<html><body style='margin:0;background:transparent;overflow:hidden'><script async data-cfasync='false' src='https://inputoppose.com/${ad.key}/invoke.js'></script><div id='container-${ad.key}'></div></body></html>`;
+// ============================================================
+// NORMALISASI LINK THUMBNAIL MANUAL
+// ============================================================
+function normalizeThumbLink(url) {
+  if (!url) return url;
+  const trimmed = url.trim();
+  const gdrive = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
+              || trimmed.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/)
+              || trimmed.match(/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
+  if (gdrive) return `https://drive.google.com/uc?export=view&id=${gdrive[1]}`;
+  if (trimmed.includes("dropbox.com")) {
+    if (trimmed.includes("dl=0")) return trimmed.replace("dl=0", "raw=1");
+    if (!trimmed.includes("raw=1") && !trimmed.includes("dl=1")) {
+      return trimmed + (trimmed.includes("?") ? "&raw=1" : "?raw=1");
     }
-    return `<html><body style='margin:0;background:transparent;overflow:hidden'><script>atOptions={'key':'${ad.key}','format':'iframe','height':${ad.height},'width':${ad.width},'params':{}};</script><script src='https://inputoppose.com/${ad.key}/invoke.js'></script></body></html>`;
+  }
+  return trimmed;
+}
+
+// ============================================================
+// UPLOAD GENERIK
+// ============================================================
+function getByPath(obj, path) {
+  if (!path) return undefined;
+  return path.split(".").reduce((o, k) => (o ? o[k] : undefined), obj);
+}
+
+let settingsCache = null;
+async function getSiteSettings(forceRefresh = false) {
+  if (settingsCache && !forceRefresh) return settingsCache;
+  const snap = await getDoc(doc(db, "settings", "site"));
+  settingsCache = snap.exists() ? snap.data() : {};
+  return settingsCache;
+}
+
+// ---------- Upload generik ke host, dengan dukungan:
+// - authType: "query" (?key=xxx), "header" (Authorization/AccessKey), atau
+//   "form" (api key dikirim sebagai field form biasa bareng file, dipakai
+//   provider seperti Vidara yang minta field "api_key"/"key" di POST body)
+// - Proses 2 langkah (serverEndpoint diisi): ambil dulu URL upload dinamis
+//   dari serverEndpoint sebelum benar-benar POST file-nya. Kalau kosong,
+//   langsung POST ke `endpoint` seperti biasa (provider 1 langkah).
+// ============================================================
+async function resolveUploadTarget(config) {
+  const { serverEndpoint, serverField, apiKey, endpoint } = config;
+  if (!serverEndpoint) return endpoint; // provider 1 langkah biasa
+
+  const sep = serverEndpoint.includes("?") ? "&" : "?";
+  const res = await fetch(`${serverEndpoint}${sep}api_key=${encodeURIComponent(apiKey)}`);
+  const data = await res.json();
+  const dynamicUrl = getByPath(data, serverField || "result.upload_server");
+  if (!dynamicUrl) {
+    throw new Error("Gagal mengambil upload server. Cek isian 'Field Upload Server di Respons'.");
+  }
+  return dynamicUrl;
+}
+
+async function uploadToHost(fileOrBlob, config) {
+  const {
+    endpoint, apiKey, urlField, fileFieldName = "file", authType = "query",
+    fileName, apiKeyFieldName = "api_key", codeField, embedTemplate
+  } = config;
+  if (!apiKey) {
+    throw new Error("API key host ini belum diisi lengkap di Pengaturan.");
   }
 
-  function makeIframe(adName, cropHeight){
-    const ad = ADS[adName];
-    if(!ad) return null;
-    const iframe = document.createElement('iframe');
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-    iframe.loading = 'lazy';
-    iframe.title = 'Sponsored';
-    iframe.srcdoc = buildSrcdoc(ad);
-
-    if(ad.native){
-      const isDesktop = window.innerWidth >= 900;
-      if(isDesktop){
-        // Desktop sudah pas sebagaimana adanya — tidak disentuh.
-        iframe.style.cssText = 'width:100%; height:420px; border:0;';
-        return iframe;
-      }
-      // Mobile: kasih iframe ruang lega di dalam (500px) supaya kartu pertama
-      // PASTI render utuh tanpa kepotong teksnya, lalu crop tampilan luarnya
-      // persis di batas 1 kartu lewat wrapper overflow:hidden. cropHeight bisa
-      // beda-beda per halaman (lewat atribut data-crop) karena tinggi kartu
-      // asli Adsterra bisa sedikit berbeda tergantung lebar kontainer halaman.
-      iframe.style.cssText = 'width:100%; height:500px; border:0; display:block;';
-      const crop = document.createElement('div');
-      crop.style.cssText = `width:100%; height:${cropHeight || 345}px; overflow:hidden; border-radius:12px;`;
-      crop.appendChild(iframe);
-      return crop;
-    }
-
-    iframe.width = ad.width;
-    iframe.height = ad.height;
-    iframe.style.cssText = 'border:0;';
-    return iframe;
+  const uploadUrl = await resolveUploadTarget(config);
+  if (!uploadUrl) {
+    throw new Error("Endpoint upload host ini belum diisi lengkap di Pengaturan.");
   }
 
-  function init(){
-    // Isi semua slot iklan biasa yang ada di halaman ini
-    document.querySelectorAll('.ad-slot[data-ad]').forEach(slot => {
-      const cropHeight = slot.dataset.crop ? Number(slot.dataset.crop) : undefined;
-      const iframe = makeIframe(slot.dataset.ad, cropHeight);
-      if(iframe) slot.appendChild(iframe);
+  const formData = new FormData();
+  formData.append(fileFieldName, fileOrBlob, fileName || fileOrBlob.name || "upload");
+
+  let url = uploadUrl;
+  const headers = {};
+  if (authType === "header") {
+    headers["Authorization"] = `Bearer ${apiKey}`;
+    headers["AccessKey"] = apiKey;
+  } else if (authType === "form") {
+    // Dikirim sebagai field biasa di body form, bareng file-nya (pola Vidara)
+    formData.append(apiKeyFieldName, apiKey);
+  } else {
+    const sep = uploadUrl.includes("?") ? "&" : "?";
+    url = `${uploadUrl}${sep}key=${encodeURIComponent(apiKey)}`;
+  }
+
+  const res = await fetch(url, { method: "POST", body: formData, headers });
+  const data = await res.json();
+  if (data.success === false || data.error) {
+    throw new Error(data.error?.message || data.message || "Upload gagal.");
+  }
+
+  // Kalau ada template link embed (mis. "https://vidara.to/e/{code}"),
+  // bangun link-nya dari kode video di respons -- ini dipakai provider
+  // yang responsnya cuma kasih "filecode", bukan link embed langsung jadi.
+  if (embedTemplate && codeField) {
+    const code = getByPath(data, codeField);
+    if (!code) throw new Error("Kode video tidak ditemukan di respons. Cek 'Field Kode Video di Respons'.");
+    return embedTemplate.replace("{code}", code);
+  }
+
+  const resultUrl = getByPath(data, urlField || "data.url");
+  if (!resultUrl) {
+    throw new Error("URL tidak ditemukan di respons API. Cek isian 'Field URL Video di Respons' pada host ini.");
+  }
+  return resultUrl;
+}
+
+async function pollUploadStatus(idOrUrl, statusConfig) {
+  const { statusEndpoint, apiKey, authType = "query", urlField, statusField, readyValue = "ready" } = statusConfig;
+  if (!statusEndpoint) return idOrUrl;
+  const maxAttempts = 24;
+  const delayMs = 5000;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let url = `${statusEndpoint}${statusEndpoint.includes("?") ? "&" : "?"}id=${encodeURIComponent(idOrUrl)}`;
+    const headers = {};
+    if (authType === "header") {
+      headers["Authorization"] = `Bearer ${apiKey}`;
+      headers["AccessKey"] = apiKey;
+    } else {
+      url += `&key=${encodeURIComponent(apiKey)}`;
+    }
+    const res = await fetch(url, { headers });
+    const data = await res.json();
+    const status = getByPath(data, statusField || "status");
+    if (status === readyValue) {
+      return getByPath(data, urlField || "data.url") || idOrUrl;
+    }
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  throw new Error("Video masih diproses, coba cek lagi beberapa saat lagi.");
+}
+
+// ============================================================
+// CROP/ZOOM THUMBNAIL (Cropper.js via CDN di dashboard.html)
+// ============================================================
+let cropperInstance = null;
+let pendingCropResolve = null;
+
+const CROP_RATIOS = {
+  "16:9": { ratio: 16 / 9, outW: 640, outH: 360 },
+  "9:16": { ratio: 9 / 16, outW: 360, outH: 640 },
+};
+
+function getSelectedRatioKey() {
+  const checked = document.querySelector('input[name="crop-ratio"]:checked');
+  return checked ? checked.value : "16:9";
+}
+
+function openCropModal(file) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("crop-modal");
+    const img = document.getElementById("crop-image");
+    if (!modal || !img || typeof Cropper === "undefined") {
+      resolve(file);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      img.src = reader.result;
+      modal.style.display = "flex";
+      if (cropperInstance) cropperInstance.destroy();
+      const initialRatio = CROP_RATIOS[getSelectedRatioKey()].ratio;
+      cropperInstance = new Cropper(img, { aspectRatio: initialRatio, viewMode: 1, autoCropArea: 1, background: false });
+      pendingCropResolve = resolve;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function initCropModalButtons() {
+  const confirmBtn = document.getElementById("crop-confirm");
+  const cancelBtn = document.getElementById("crop-cancel");
+  const modal = document.getElementById("crop-modal");
+  const ratioRadios = document.querySelectorAll('input[name="crop-ratio"]');
+  if (!confirmBtn || !cancelBtn) return;
+
+  ratioRadios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      if (!cropperInstance) return;
+      const key = getSelectedRatioKey();
+      cropperInstance.setAspectRatio(CROP_RATIOS[key].ratio);
     });
+  });
 
-    // Sticky banner — auto dipasang kalau halaman punya <div id="ad-sticky-mount">
-    const stickyMount = document.getElementById('ad-sticky-mount');
-    if(stickyMount){
-      const wrap = document.createElement('div');
-      wrap.className = 'ad-sticky';
-      wrap.id = 'ad-sticky';
+  confirmBtn.addEventListener("click", () => {
+    if (!cropperInstance) return;
+    const key = getSelectedRatioKey();
+    const { outW, outH } = CROP_RATIOS[key];
+    cropperInstance.getCroppedCanvas({ width: outW, height: outH }).toBlob((blob) => {
+      modal.style.display = "none";
+      cropperInstance.destroy();
+      cropperInstance = null;
+      pendingCropResolve?.(blob);
+      pendingCropResolve = null;
+    }, "image/jpeg", 0.92);
+  });
 
-      const closeBtn = document.createElement('button');
-      closeBtn.type = 'button';
-      closeBtn.className = 'ad-sticky-close';
-      closeBtn.setAttribute('aria-label', 'Tutup iklan');
-      closeBtn.innerHTML = '&times;';
-      closeBtn.addEventListener('click', () => {
-        wrap.style.display = 'none';
-        document.body.style.paddingBottom = '0';
+  cancelBtn.addEventListener("click", () => {
+    modal.style.display = "none";
+    if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+    pendingCropResolve?.(null);
+    pendingCropResolve = null;
+  });
+}
+
+// ---------- Upload Thumbnail (manual link ATAU upload file + crop) ----------
+function initThumbUpload() {
+  const fileInput = document.getElementById("f-thumb-file");
+  const urlInput = document.getElementById("f-thumb");
+  const preview = document.getElementById("thumb-preview");
+  const status = document.getElementById("thumb-upload-status");
+  if (!urlInput) return;
+
+  urlInput.addEventListener("change", () => {
+    const normalized = normalizeThumbLink(urlInput.value.trim());
+    urlInput.value = normalized;
+    preview.innerHTML = normalized ? `<img src="${normalized}" alt="preview thumbnail">` : "";
+  });
+
+  if (!fileInput) return;
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const cropped = await openCropModal(file);
+    fileInput.value = "";
+    if (!cropped) return;
+
+    status.textContent = "Mengupload gambar...";
+    preview.innerHTML = "";
+    try {
+      const s = await getSiteSettings(true);
+      const url = await uploadToHost(cropped, {
+        endpoint: s.thumbEndpoint, apiKey: s.thumbApiKey, urlField: s.thumbField,
+        fileFieldName: "image", authType: "query", fileName: "thumbnail.jpg"
+      });
+      urlInput.value = url;
+      preview.innerHTML = `<img src="${url}" alt="preview thumbnail">`;
+      status.textContent = "Berhasil diupload.";
+    } catch (err) {
+      status.textContent = "Gagal upload: " + err.message;
+    }
+  });
+}
+
+// ============================================================
+// AUTO-THUMBNAIL MULTI-HOST
+// ============================================================
+function extractAutoThumbFromEmbed(embedUrl) {
+  if (!embedUrl) return null;
+  const yt = embedUrl.match(/youtu\.be\/([a-zA-Z0-9_-]+)/)
+          || embedUrl.match(/[?&]v=([a-zA-Z0-9_-]+)/)
+          || embedUrl.match(/embed\/([a-zA-Z0-9_-]+)/);
+  if (yt) return `https://img.youtube.com/vi/${yt[1]}/hqdefault.jpg`;
+
+  const vimeo = embedUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vimeo) return `https://vumbnail.com/${vimeo[1]}.jpg`;
+
+  return null;
+}
+
+function findMatchingHostProfile(embedUrl, profiles) {
+  if (!embedUrl || !Array.isArray(profiles)) return null;
+  return profiles.find(p => {
+    if (!p.domainPattern) return false;
+    try { return new RegExp(p.domainPattern, "i").test(embedUrl); }
+    catch (e) { return false; }
+  }) || null;
+}
+
+function extractCodeFromEmbed(embedUrl, codePattern) {
+  if (!embedUrl || !codePattern) return null;
+  try {
+    const re = new RegExp(codePattern);
+    const m = embedUrl.match(re);
+    return m ? m[1] : null;
+  } catch (e) { return null; }
+}
+
+async function fetchThumbnailFromHostProfile(embedUrl, profile) {
+  const code = extractCodeFromEmbed(embedUrl, profile.codePattern);
+  if (!code) return null;
+  try {
+    const sep = profile.infoEndpoint.includes("?") ? "&" : "?";
+    const paramName = profile.codeParam || "file_code";
+    const url = `${profile.infoEndpoint}${sep}api_key=${encodeURIComponent(profile.apiKey || "")}&${paramName}=${encodeURIComponent(code)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    // Sebagian provider (mis. Vidara) balikin array di "result" -- coba
+    // ambil elemen pertama otomatis kalau field yang diminta memang array.
+    let thumb = getByPath(data, profile.thumbField || "result.0.player_img");
+    return thumb || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function captureFrameFromVideoUrl(url) {
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
+    video.muted = true;
+    video.preload = "auto";
+    video.src = url;
+
+    video.addEventListener("loadeddata", () => {
+      try { video.currentTime = Math.min(1, (video.duration || 2) / 2); }
+      catch (e) { resolve(null); }
+    });
+    video.addEventListener("seeked", () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 360;
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.85);
+      } catch (e) { resolve(null); }
+    });
+    video.addEventListener("error", () => resolve(null));
+    setTimeout(() => resolve(null), 8000);
+  });
+}
+
+async function autoGenerateThumbnail(embedUrl) {
+  const staticThumb = extractAutoThumbFromEmbed(embedUrl);
+  if (staticThumb) return staticThumb;
+
+  const s = await getSiteSettings(true);
+
+  const profile = findMatchingHostProfile(embedUrl, s.videoHostProfiles);
+  if (profile) {
+    const apiThumb = await fetchThumbnailFromHostProfile(embedUrl, profile);
+    if (apiThumb) return apiThumb;
+  }
+
+  const isDirectVideoFile = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(embedUrl);
+  if (isDirectVideoFile) {
+    const blob = await captureFrameFromVideoUrl(embedUrl);
+    if (blob) {
+      try {
+        return await uploadToHost(blob, {
+          endpoint: s.thumbEndpoint, apiKey: s.thumbApiKey, urlField: s.thumbField,
+          fileFieldName: "image", authType: "query", fileName: "auto-thumb.jpg"
+        });
+      } catch (e) { return null; }
+    }
+  }
+  return null;
+}
+
+// ---------- Upload Video dari Galeri ----------
+function initVideoUpload() {
+  const fileInput = document.getElementById("f-video-file");
+  const embedInput = document.getElementById("f-embed");
+  const status = document.getElementById("video-upload-status");
+  if (!fileInput) return;
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const s = await getSiteSettings(true);
+    const profiles = Array.isArray(s.videoHostProfiles) ? s.videoHostProfiles : [];
+    const activeHost = profiles.find(p => p.name === s.activeUploadHostName);
+
+    if (!activeHost) {
+      status.textContent = "Belum ada host video yang dijadikan aktif untuk upload. Atur dulu di tab Pengaturan → Daftar Host Video.";
+      return;
+    }
+    if (!activeHost.apiKey) {
+      status.textContent = `API key untuk "${activeHost.name}" belum lengkap di Pengaturan.`;
+      return;
+    }
+
+    status.textContent = `Mengupload video ke ${activeHost.name}...`;
+    try {
+      let url = await uploadToHost(file, {
+        endpoint: activeHost.uploadEndpoint,
+        apiKey: activeHost.apiKey,
+        urlField: activeHost.uploadUrlField,
+        fileFieldName: "file",
+        authType: activeHost.uploadAuthType || "query",
+        apiKeyFieldName: activeHost.uploadApiKeyFieldName || "api_key",
+        fileName: file.name,
+        serverEndpoint: activeHost.uploadServerEndpoint,
+        serverField: activeHost.uploadServerField,
+        codeField: activeHost.uploadCodeField,
+        embedTemplate: activeHost.uploadEmbedTemplate
       });
 
-      // Layar sempit (HP) pakai 320x50, layar lebar (desktop, >=900px) pakai 728x90
-      const stickyAdName = window.innerWidth >= 900 ? 'stickyDesktop' : 'banner50';
-      const iframe = makeIframe(stickyAdName);
-      if(iframe) wrap.appendChild(iframe);
-      wrap.appendChild(closeBtn);
-      stickyMount.replaceWith(wrap);
+      if (activeHost.uploadStatusEndpoint) {
+        status.textContent = "Video sedang diproses server, mohon tunggu...";
+        url = await pollUploadStatus(url, {
+          statusEndpoint: activeHost.uploadStatusEndpoint,
+          apiKey: activeHost.apiKey,
+          authType: activeHost.uploadAuthType || "query",
+          urlField: activeHost.uploadUrlField,
+          statusField: activeHost.uploadStatusField,
+          readyValue: activeHost.uploadReadyValue || "ready"
+        });
+      }
+
+      embedInput.value = url;
+      status.textContent = `Video berhasil diupload ke ${activeHost.name}, link embed terisi otomatis.`;
+    } catch (err) {
+      status.textContent = "Gagal upload video: " + err.message;
     }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initThumbUpload();
+  initVideoUpload();
+  initCropModalButtons();
+});
+
+// ============================================================
+// AUTH GUARD
+// ============================================================
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "../login.html"; return; }
+  const snap = await getDoc(doc(db, "users", user.uid));
+  const role = snap.exists() ? snap.data().role : "user";
+  if (role !== "admin") {
+    document.getElementById("admin-guard").style.display = "block";
+    return;
+  }
+  document.getElementById("admin-app").style.display = "grid";
+  initTabs();
+  loadVideoTable();
+  loadSettings();
+  loadPageEditor(document.getElementById("p-slug")?.value || "contact");
+});
+
+function initTabs() {
+  document.querySelectorAll(".sidebar a[data-tab]").forEach(link => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      document.querySelectorAll(".sidebar a[data-tab]").forEach(a => a.classList.remove("active"));
+      link.classList.add("active");
+      ["upload", "videos", "settings", "pages"].forEach(t => {
+        document.getElementById(`tab-${t}`).style.display = t === link.dataset.tab ? "block" : "none";
+      });
+      if (link.dataset.tab === "settings") loadCategoryIconManager();
+    });
+  });
+}
+
+// ============================================================
+// PENGATURAN + Daftar Host Video terpadu
+// ============================================================
+let hostProfilesState = [];
+let activeUploadHostName = "";
+
+function renderHostProfilesTable() {
+  const wrap = document.getElementById("video-host-list");
+  if (!wrap) return;
+  wrap.innerHTML = hostProfilesState.map((p, i) => `
+    <div class="host-profile-row" data-i="${i}" style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div class="form-grid">
+        <div><label>Nama Host</label><input class="hp-name" value="${p.name || ""}" placeholder="mis. Vidara"></div>
+        <div><label>Pola Domain (regex)</label><input class="hp-domain" value="${p.domainPattern || ""}" placeholder="mis. vidara\\.to"></div>
+      </div>
+      <div class="form-grid" style="margin-top:8px">
+        <div class="form-grid full">
+          <label>Domain Pengganti (isi HANYA kalau host ini baru saja pindah domain)</label>
+          <input class="hp-replacement" value="${p.replacementDomain || ""}" placeholder="mis. playexa2s.app (kosongkan kalau domain masih sama)">
+          <div class="field-hint" style="font-size:.75rem;color:var(--text-muted);margin-top:4px">
+            Video yang link embed-nya cocok "Pola Domain" di atas akan otomatis dialihkan ke domain ini saat diputar — link asli di database TIDAK diubah.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid full" style="margin-top:10px"><label style="margin-bottom:0;font-weight:600">Untuk Auto-Thumbnail</label></div>
+      <div class="form-grid">
+        <div><label>Endpoint Info Video</label><input class="hp-endpoint" value="${p.infoEndpoint || ""}" placeholder="https://api.vidara.so/v1/video/info"></div>
+        <div><label>API Key Host Ini</label><input class="hp-apikey" value="${p.apiKey || ""}" placeholder="API key dari akun host ini"></div>
+        <div><label>Nama Parameter File Code</label><input class="hp-codeparam" value="${p.codeParam || ""}" placeholder="mis. filecode"></div>
+        <div><label>Pola Ambil File Code dari Link (regex)</label><input class="hp-codepattern" value="${p.codePattern || ""}" placeholder="mis. /e/([a-zA-Z0-9]+)"></div>
+        <div class="form-grid full"><label>Field Thumbnail di Respons</label><input class="hp-thumbfield" value="${p.thumbField || ""}" placeholder="mis. result.0.player_img"></div>
+      </div>
+
+      <div class="form-grid full" style="margin-top:10px"><label style="margin-bottom:0;font-weight:600">Untuk Upload Video dari Galeri</label></div>
+      <div class="form-grid">
+        <div><label>Endpoint Ambil Upload Server (opsional — isi kalau provider butuh 2 langkah, mis. Vidara)</label><input class="hp-upload-server-endpoint" value="${p.uploadServerEndpoint || ""}" placeholder="https://api.vidara.so/v1/upload/server"></div>
+        <div><label>Field Upload Server di Respons</label><input class="hp-upload-server-field" value="${p.uploadServerField || ""}" placeholder="mis. result.upload_server"></div>
+        <div><label>Endpoint Upload Video (dipakai langsung kalau TIDAK isi field di atas)</label><input class="hp-upload-endpoint" value="${p.uploadEndpoint || ""}" placeholder="https://api.vidara.so/v1/upload"></div>
+        <div><label>API Key Dikirim Sebagai</label>
+          <select class="hp-upload-authtype">
+            <option value="query" ${p.uploadAuthType !== "header" && p.uploadAuthType !== "form" ? "selected" : ""}>Query Param</option>
+            <option value="header" ${p.uploadAuthType === "header" ? "selected" : ""}>Header (Bearer/AccessKey)</option>
+            <option value="form" ${p.uploadAuthType === "form" ? "selected" : ""}>Form Field (bareng file, mis. Vidara)</option>
+          </select>
+        </div>
+        <div><label>Nama Field API Key (kalau "Form Field")</label><input class="hp-upload-apikeyfield" value="${p.uploadApiKeyFieldName || ""}" placeholder="mis. api_key"></div>
+        <div><label>Field URL Video di Respons (kalau responsnya sudah kasih link jadi)</label><input class="hp-upload-urlfield" value="${p.uploadUrlField || ""}" placeholder="mis. url"></div>
+        <div><label>Field Kode Video di Respons (kalau perlu bangun link sendiri)</label><input class="hp-upload-codefield" value="${p.uploadCodeField || ""}" placeholder="mis. filecode"></div>
+        <div class="form-grid full"><label>Template Link Embed (pakai {code} — isi HANYA kalau pakai Field Kode Video di atas)</label><input class="hp-upload-embedtemplate" value="${p.uploadEmbedTemplate || ""}" placeholder="mis. https://vidara.to/e/{code}"></div>
+        <div><label>Endpoint Cek Status (opsional)</label><input class="hp-upload-status-endpoint" value="${p.uploadStatusEndpoint || ""}"></div>
+        <div><label>Field Status di Respons</label><input class="hp-upload-status-field" value="${p.uploadStatusField || ""}" placeholder="mis. status"></div>
+        <div><label>Nilai Status "Siap"</label><input class="hp-upload-ready-value" value="${p.uploadReadyValue || ""}" placeholder="mis. ready"></div>
+      </div>
+
+      <label style="margin-top:10px;display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="radio" name="active-upload-host" class="hp-active-upload" style="width:auto" ${p.name && p.name === activeUploadHostName ? "checked" : ""}>
+        Jadikan host ini aktif untuk "Upload Video dari Galeri"
+      </label>
+
+      <button type="button" class="share-btn hp-remove" style="margin-top:10px">Hapus Host Ini</button>
+    </div>`).join("") || `<p style="color:var(--text-muted);font-size:.82rem">Belum ada host video ditambahkan.</p>`;
+}
+
+function collectHostProfilesFromUI() {
+  const rows = document.querySelectorAll("#video-host-list .host-profile-row");
+  return Array.from(rows).map(row => ({
+    name: row.querySelector(".hp-name").value.trim(),
+    domainPattern: row.querySelector(".hp-domain").value.trim(),
+    replacementDomain: row.querySelector(".hp-replacement").value.trim(),
+    infoEndpoint: row.querySelector(".hp-endpoint").value.trim(),
+    apiKey: row.querySelector(".hp-apikey").value.trim(),
+    codeParam: row.querySelector(".hp-codeparam").value.trim(),
+    codePattern: row.querySelector(".hp-codepattern").value.trim(),
+    thumbField: row.querySelector(".hp-thumbfield").value.trim(),
+    uploadServerEndpoint: row.querySelector(".hp-upload-server-endpoint").value.trim(),
+    uploadServerField: row.querySelector(".hp-upload-server-field").value.trim(),
+    uploadEndpoint: row.querySelector(".hp-upload-endpoint").value.trim(),
+    uploadAuthType: row.querySelector(".hp-upload-authtype").value,
+    uploadApiKeyFieldName: row.querySelector(".hp-upload-apikeyfield").value.trim(),
+    uploadUrlField: row.querySelector(".hp-upload-urlfield").value.trim(),
+    uploadCodeField: row.querySelector(".hp-upload-codefield").value.trim(),
+    uploadEmbedTemplate: row.querySelector(".hp-upload-embedtemplate").value.trim(),
+    uploadStatusEndpoint: row.querySelector(".hp-upload-status-endpoint").value.trim(),
+    uploadStatusField: row.querySelector(".hp-upload-status-field").value.trim(),
+    uploadReadyValue: row.querySelector(".hp-upload-ready-value").value.trim()
+  })).filter(p => p.name || p.domainPattern);
+}
+
+function getActiveUploadHostNameFromUI() {
+  const checked = document.querySelector("#video-host-list .hp-active-upload:checked");
+  if (!checked) return "";
+  const row = checked.closest(".host-profile-row");
+  return row.querySelector(".hp-name").value.trim();
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target.id === "btn-add-host-profile") {
+    hostProfilesState.push({});
+    renderHostProfilesTable();
+  }
+  if (e.target.classList.contains("hp-remove")) {
+    const row = e.target.closest(".host-profile-row");
+    const i = parseInt(row.dataset.i, 10);
+    hostProfilesState.splice(i, 1);
+    renderHostProfilesTable();
+  }
+});
+
+async function loadSettings() {
+  const s = await getSiteSettings(true);
+  const map = {
+    "s-name": s.siteName, "s-logo": s.logoUrl, "s-favicon": s.favicon,
+    "s-theme": s.themeColor, "s-email": s.contactEmail, "s-dmca-email": s.dmcaEmail, "s-ga": s.gaId,
+    "s-thumb-api-key": s.thumbApiKey, "s-thumb-endpoint": s.thumbEndpoint, "s-thumb-field": s.thumbField,
+    "s-default-thumb": s.defaultThumbnail
+  };
+  Object.entries(map).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el && val) el.value = val;
+  });
+
+  const hideIconsEl = document.getElementById("s-hide-category-icons");
+  if (hideIconsEl) hideIconsEl.checked = !!s.hideCategoryIcons;
+
+  hostProfilesState = Array.isArray(s.videoHostProfiles) ? s.videoHostProfiles : [];
+  activeUploadHostName = s.activeUploadHostName || "";
+  renderHostProfilesTable();
+}
+
+document.addEventListener("click", async (e) => {
+  if (e.target.id !== "btn-save-settings") return;
+  const val = (id) => document.getElementById(id)?.value.trim() || "";
+  const hideCategoryIcons = !!document.getElementById("s-hide-category-icons")?.checked;
+  await setDoc(doc(db, "settings", "site"), {
+    siteName: val("s-name"), logoUrl: val("s-logo"), favicon: val("s-favicon"),
+    themeColor: val("s-theme"), contactEmail: val("s-email"), dmcaEmail: val("s-dmca-email"), gaId: val("s-ga"),
+    thumbApiKey: val("s-thumb-api-key"), thumbEndpoint: val("s-thumb-endpoint"), thumbField: val("s-thumb-field"),
+    defaultThumbnail: val("s-default-thumb"),
+    videoHostProfiles: collectHostProfilesFromUI(),
+    activeUploadHostName: getActiveUploadHostNameFromUI(),
+    hideCategoryIcons
+  }, { merge: true });
+  settingsCache = null;
+  try {
+    const cached = JSON.parse(localStorage.getItem("nokt_settings_cache") || "null") || {};
+    cached.hideCategoryIcons = hideCategoryIcons;
+    localStorage.setItem("nokt_settings_cache", JSON.stringify(cached));
+  } catch (e) {}
+  alert("Pengaturan tersimpan.");
+});
+
+// ============================================================
+// KELOLA IKON KATEGORI (manual, opsional)
+// ============================================================
+async function loadCategoryIconManager() {
+  const wrap = document.getElementById("category-icon-manager");
+  if (!wrap) return;
+
+  wrap.innerHTML = `<p style="color:var(--text-muted);font-size:.8rem">Memuat kategori...</p>`;
+
+  const snap = await getDocs(query(collection(db, "categories"), orderBy("name")));
+  const categories = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  if (!categories.length) {
+    wrap.innerHTML = `<p style="color:var(--text-muted);font-size:.82rem">Belum ada kategori. Kategori akan muncul otomatis setelah kamu upload video pertama.</p>`;
+    return;
   }
 
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init(); // dokumen sudah selesai dimuat duluan (mis. script ditaruh di akhir body)
+  wrap.innerHTML = categories.map(cat => {
+    const currentIcon = resolveCategoryIcon(cat);
+    const isManual = !!cat.icon;
+    return `
+      <div class="cat-icon-row" data-slug="${cat.slug}" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span class="cat-icon-preview" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text)">${iconSvg(currentIcon)}</span>
+        <span style="flex:1;font-size:.88rem">${cat.name}</span>
+        <select class="cat-icon-select" data-slug="${cat.slug}" data-name="${cat.name}" style="width:auto;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:6px;font-size:.8rem">
+          <option value="">Otomatis (tebak dari nama)</option>
+          ${allIconIds().map(id => `
+            <option value="${id}" ${isManual && cat.icon === id ? "selected" : ""}>${ICON_LIBRARY[id].label}</option>
+          `).join("")}
+        </select>
+        <span class="cat-icon-status" data-slug="${cat.slug}" style="font-size:.72rem;color:var(--accent);min-width:60px"></span>
+      </div>`;
+  }).join("");
+}
+
+document.addEventListener("change", async (e) => {
+  if (!e.target.classList.contains("cat-icon-select")) return;
+  const select = e.target;
+  const slug = select.dataset.slug;
+  const catName = select.dataset.name;
+  const iconId = select.value;
+  const row = select.closest(".cat-icon-row");
+  const statusEl = row.querySelector(".cat-icon-status");
+  const previewEl = row.querySelector(".cat-icon-preview");
+
+  try {
+    if (iconId) {
+      await updateDoc(doc(db, "categories", slug), { icon: iconId });
+    } else {
+      await updateDoc(doc(db, "categories", slug), { icon: deleteField() });
+    }
+    const resolved = resolveCategoryIcon({ slug, name: catName, icon: iconId || undefined });
+    if (previewEl) previewEl.innerHTML = iconSvg(resolved);
+    if (statusEl) {
+      statusEl.textContent = "Tersimpan ✓";
+      setTimeout(() => { statusEl.textContent = ""; }, 1500);
+    }
+  } catch (err) {
+    if (statusEl) statusEl.textContent = "Gagal: " + err.message;
   }
-})();
+});
+
+// ============================================================
+// KELOLA HALAMAN STATIS (Kontak, Privacy Policy, Terms, DMCA, Disclaimer)
+// ============================================================
+const STATIC_PAGE_DEFAULT_TITLES = {
+  "contact": "Kontak",
+  "privacy-policy": "Privacy Policy",
+  "terms": "Terms",
+  "dmca": "DMCA",
+  "disclaimer": "Disclaimer"
+};
+
+async function loadPageEditor(slug) {
+  const titleInput = document.getElementById("p-title");
+  const contentInput = document.getElementById("p-content");
+  const msg = document.getElementById("page-msg");
+  if (!titleInput || !contentInput) return;
+  msg.textContent = "";
+  const snap = await getDoc(doc(db, "pages", slug));
+  if (snap.exists()) {
+    const d = snap.data();
+    titleInput.value = d.title || STATIC_PAGE_DEFAULT_TITLES[slug] || "";
+    contentInput.value = d.content || "";
+  } else {
+    titleInput.value = STATIC_PAGE_DEFAULT_TITLES[slug] || "";
+    contentInput.value = "";
+  }
+}
+
+document.addEventListener("change", (e) => {
+  if (e.target.id === "p-slug") loadPageEditor(e.target.value);
+});
+
+document.addEventListener("click", async (e) => {
+  if (e.target.id !== "btn-save-page") return;
+  const slug = document.getElementById("p-slug").value;
+  const title = document.getElementById("p-title").value.trim();
+  const content = document.getElementById("p-content").value;
+  const msg = document.getElementById("page-msg");
+  try {
+    await setDoc(doc(db, "pages", slug), { title, content, updatedAt: serverTimestamp() }, { merge: true });
+    msg.textContent = "Halaman berhasil disimpan.";
+  } catch (err) {
+    msg.textContent = "Gagal menyimpan: " + err.message;
+  }
+});
+
+// ============================================================
+// KATEGORI & TAG
+// ============================================================
+async function upsertCategory(name) {
+  if (!name) return;
+  const slug = slugify(name);
+  const ref = doc(db, "categories", slug);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    await setDoc(ref, { name, slug, videoCount: 1 });
+  } else {
+    await updateDoc(ref, { videoCount: (snap.data().videoCount || 0) + 1 });
+  }
+}
+
+async function upsertTags(tags) {
+  for (const t of tags) {
+    const slug = slugify(t);
+    if (!slug) continue;
+    const ref = doc(db, "tags", slug);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, { name: t, slug, searchCount: 0, videoCount: 1 });
+    } else {
+      await updateDoc(ref, { videoCount: (snap.data().videoCount || 0) + 1 });
+    }
+  }
+}
+
+// ============================================================
+// FORM VIDEO
+// ============================================================
+let editingVideoId = null;
+
+function fillForm(v) {
+  document.getElementById("f-title").value = v.title || "";
+  document.getElementById("f-category").value = v.category || "";
+  document.getElementById("f-desc").value = v.description || "";
+  document.getElementById("f-tags").value = (v.tags || []).join(", ");
+  document.getElementById("f-status").value = v.status || "draft";
+  document.getElementById("f-thumb").value = v.thumbnail || "";
+  document.getElementById("f-embed").value = v.embedUrl || "";
+  document.getElementById("f-seo-title").value = v.seoTitle || "";
+  document.getElementById("f-seo-desc").value = v.seoDescription || "";
+  document.getElementById("f-keywords").value = v.metaKeywords || "";
+  document.getElementById("f-admin-name").value = v.adminName || "";
+  const preview = document.getElementById("thumb-preview");
+  preview.innerHTML = v.thumbnail ? `<img src="${v.thumbnail}" alt="preview thumbnail">` : "";
+}
+
+function resetForm() {
+  editingVideoId = null;
+  document.querySelectorAll("#tab-upload input, #tab-upload textarea").forEach(i => i.value = "");
+  document.getElementById("thumb-preview").innerHTML = "";
+  document.getElementById("thumb-upload-status").textContent = "";
+  const videoStatus = document.getElementById("video-upload-status");
+  if (videoStatus) videoStatus.textContent = "";
+  document.getElementById("btn-upload").textContent = "Simpan Video";
+  document.getElementById("upload-msg").textContent = "";
+}
+
+async function startEdit(videoId) {
+  const snap = await getDoc(doc(db, "videos", videoId));
+  if (!snap.exists()) return;
+  editingVideoId = videoId;
+  fillForm(snap.data());
+  document.getElementById("btn-upload").textContent = "Update Video";
+  document.querySelector('.sidebar a[data-tab="upload"]').click();
+  window.scrollTo(0, 0);
+}
+
+document.addEventListener("click", async (e) => {
+  if (e.target.id !== "btn-upload") return;
+  const title = document.getElementById("f-title").value.trim();
+  const category = document.getElementById("f-category").value.trim();
+  const description = document.getElementById("f-desc").value.trim();
+  const tags = document.getElementById("f-tags").value.split(",").map(t => t.trim()).filter(Boolean);
+  const status = document.getElementById("f-status").value;
+  let thumbnail = normalizeThumbLink(document.getElementById("f-thumb").value.trim());
+  const embedUrl = document.getElementById("f-embed").value.trim();
+  const seoTitle = document.getElementById("f-seo-title").value.trim();
+  const seoDescription = document.getElementById("f-seo-desc").value.trim();
+  const metaKeywords = document.getElementById("f-keywords").value.trim();
+  const adminName = document.getElementById("f-admin-name").value.trim();
+  const msg = document.getElementById("upload-msg");
+
+  if (!title || !embedUrl) { msg.textContent = "Judul dan Link Embed wajib diisi."; return; }
+
+  if (!thumbnail) {
+    msg.textContent = "Membuat thumbnail otomatis dari video...";
+    const auto = await autoGenerateThumbnail(embedUrl);
+    if (auto) thumbnail = auto;
+    msg.textContent = "";
+  }
+
+  try {
+    if (editingVideoId) {
+      await updateDoc(doc(db, "videos", editingVideoId), {
+        title, slug: slugify(title), description, category, tags,
+        thumbnail, embedUrl, status, adminName,
+        seoTitle, seoDescription, metaKeywords
+      });
+      await upsertCategory(category);
+      await upsertTags(tags);
+      msg.textContent = "Video berhasil diupdate.";
+    } else {
+      await addDoc(collection(db, "videos"), {
+        title, slug: slugify(title), description, category, tags,
+        thumbnail, embedUrl, status, uploadedAt: serverTimestamp(), adminName,
+        seoTitle, seoDescription, metaKeywords,
+        viewCount: 0, likeCount: 0, shareCount: 0, searchTagCount: 0
+      });
+      await upsertCategory(category);
+      await upsertTags(tags);
+      msg.textContent = "Video berhasil disimpan.";
+    }
+    resetForm();
+    loadVideoTable();
+  } catch (err) {
+    msg.textContent = "Gagal menyimpan: " + err.message;
+  }
+});
+
+async function loadVideoTable() {
+  const body = document.getElementById("video-table-body");
+  if (!body) return;
+  const snap = await getDocs(query(collection(db, "videos"), orderBy("uploadedAt", "desc")));
+  body.innerHTML = snap.docs.map(d => {
+    const v = d.data();
+    return `
+      <tr>
+        <td>${v.title}</td>
+        <td>${v.category || "-"}</td>
+        <td>${v.status}</td>
+        <td>${v.viewCount || 0}</td>
+        <td class="row-actions">
+          <button class="share-btn" data-edit="${d.id}">Edit</button>
+          <button class="share-btn" data-del="${d.id}">Hapus</button>
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+document.addEventListener("click", async (e) => {
+  const editId = e.target.dataset.edit;
+  if (editId) { startEdit(editId); return; }
+  const delId = e.target.dataset.del;
+  if (delId && confirm("Hapus video ini?")) {
+    await deleteDoc(doc(db, "videos", delId));
+    loadVideoTable();
+  }
+});
