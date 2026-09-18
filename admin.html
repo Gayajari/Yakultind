@@ -548,26 +548,33 @@
     grid.innerHTML = photoItems.map((item, i) => `
       <div class="photo-slot">
         <img src="${item.previewUrl}">
-        ${item.file ? `
         <button type="button" class="crop-photo" data-i="${i}" title="Atur ulang foto">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>
-        </button>` : ''}
+        </button>
         <button type="button" class="remove-photo" data-i="${i}">&times;</button>
       </div>
     `).join('') + `
       <label class="add-photo-slot">+
         <input type="file" accept="image/*" id="add-photo-input" multiple>
       </label>`;
-    // Tombol "Atur ulang foto" cuma ada di foto BARU (item.file ada) — foto yang
-    // sudah ter-upload ke storage (URL remote) tidak bisa di-crop ulang langsung
-    // karena keterbatasan CORS pada <canvas>, sesuai catatan di engine crop.
+    // Tombol "Atur ulang foto" sekarang berlaku untuk foto baru (File lokal)
+    // MAUPUN foto lama yang sudah ter-upload (URL remote) — bucket publik
+    // Supabase Storage biasanya sudah mengizinkan akses lintas domain (CORS).
+    // Kalau ternyata belum di-setting begitu, ada pesan error yang jelas
+    // (lihat cropConfirmBtn.onclick), bukan diam-diam gagal.
     grid.querySelectorAll('.crop-photo').forEach(btn => {
       btn.addEventListener('click', async () => {
         const i = Number(btn.dataset.i);
         const item = photoItems[i];
-        if(!item || !item.file) return;
-        const blob = await openCropperForFile(item.file);
+        if(!item) return;
+        const isExisting = !item.file; // foto lama, URL remote di storage
+        const blob = item.file
+          ? await openCropperForFile(item.file)
+          : await openCropperForUrl(item.previewUrl);
         if(blob){
+          // Kalau yang di-crop adalah foto lama, tandai URL lamanya supaya
+          // dibersihkan dari storage setelah form disimpan (diganti versi baru).
+          if(isExisting && item.previewUrl) removedPhotoUrls.push(item.previewUrl);
           const croppedFile = new File([blob], `crop-${Date.now()}.jpg`, { type:'image/jpeg' });
           photoItems[i] = { file: croppedFile, previewUrl: URL.createObjectURL(blob) };
           renderPhotoGrid();
@@ -650,14 +657,32 @@
   function openCropperForFile(file) {
     return new Promise((resolve) => {
       cropResolve = resolve;
+      cropImgEl.removeAttribute('crossorigin'); // file lokal tidak butuh ini
       loadFileIntoCropper(file);
+    });
+  }
+
+  // Buat foto yang SUDAH ter-upload ke storage (URL remote, bukan File lokal).
+  // Bucket publik Supabase Storage biasanya sudah mengizinkan akses lintas domain
+  // (CORS), jadi ini biasanya bisa jalan normal. Kalau ternyata bucket-nya belum
+  // di-setting begitu, akan otomatis gagal dengan pesan yang jelas (lihat
+  // penanganan error di cropConfirmBtn.onclick), bukan diam-diam rusak.
+  function openCropperForUrl(url) {
+    return new Promise((resolve) => {
+      cropResolve = resolve;
+      cropImgEl.crossOrigin = 'anonymous';
+      setupCropImageFromSrc(url);
     });
   }
 
   function loadFileIntoCropper(file) {
     if (cropObjectUrl) URL.revokeObjectURL(cropObjectUrl);
     cropObjectUrl = URL.createObjectURL(file);
-    cropImgEl.src = cropObjectUrl;
+    setupCropImageFromSrc(cropObjectUrl);
+  }
+
+  function setupCropImageFromSrc(src) {
+    cropImgEl.src = src;
     cropImgEl.onload = () => {
       cropNaturalW = cropImgEl.naturalWidth;
       cropNaturalH = cropImgEl.naturalHeight;
@@ -816,7 +841,7 @@
   cropSwapInput.addEventListener("change", () => {
     const file = cropSwapInput.files[0];
     cropSwapInput.value = "";
-    if (file) loadFileIntoCropper(file);
+    if (file) { cropImgEl.removeAttribute('crossorigin'); loadFileIntoCropper(file); }
   });
 
   cropConfirmBtn.onclick = () => {
@@ -842,11 +867,21 @@
     const centerX = outW / 2 + cropOffsetX * renderScale;
     const centerY = outH / 2 + cropOffsetY * renderScale;
 
-    ctx.drawImage(cropImgEl, centerX - dispW / 2, centerY - dispH / 2, dispW, dispH);
-
-    canvas.toBlob((blob) => {
-      closeCropModal(blob);
-    }, "image/jpeg", 0.9);
+    try {
+      ctx.drawImage(cropImgEl, centerX - dispW / 2, centerY - dispH / 2, dispW, dispH);
+      canvas.toBlob((blob) => {
+        if(!blob){
+          alert("Foto ini tidak bisa di-crop ulang langsung karena pengaturan akses foto di server. Coba pilih foto baru sebagai gantinya.");
+          return;
+        }
+        closeCropModal(blob);
+      }, "image/jpeg", 0.9);
+    } catch (err) {
+      // Kalau bucket storage-nya ternyata belum mengizinkan akses lintas domain
+      // (CORS), browser akan menolak baca isi canvas ini — bukan bug di kode,
+      // tapi setting bucket. Kasih tahu jelas, jangan diam-diam gagal.
+      alert("Foto ini tidak bisa di-crop ulang langsung karena pengaturan akses foto di server. Coba pilih foto baru sebagai gantinya.");
+    }
   };
 
   /* ---------- FORM SUBMIT ---------- */
