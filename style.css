@@ -30,7 +30,6 @@ img{max-width:100%;}
   position:sticky; top:0; z-index:40;
   background:rgba(255,248,240,0.92);
   backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--line);
 }
 .header-top{
   display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:6px;
@@ -163,7 +162,6 @@ img{max-width:100%;}
   padding:5px 0 5px max(20px, calc((100% - 1120px) / 2 + 20px));
   position:sticky; top:var(--header-h, 108px); z-index:30;
   background:var(--cream);
-  border-bottom:1px solid var(--line);
 }
 .chips-scroll{
   display:flex; gap:5px; overflow-x:auto; scrollbar-width:none;
@@ -382,21 +380,21 @@ body{ padding-bottom:66px; }
 /* ---------- Language switcher ---------- */
 .lang-switcher{
   display:flex; justify-content:flex-end;
-  padding:0 15px 6px; max-width:1120px; margin:0 auto;
+  padding:0 15px; max-width:1120px; margin:0 auto;
 }
 .lang-switcher select{
-  font-family:'Inter',sans-serif; font-size:12px; font-weight:500;
-  padding:4px 10px; border-radius:999px;
-  border:1.5px solid var(--line); background:var(--card); color:var(--ink);
+  font-family:'Inter',sans-serif; font-size:10px; font-weight:500;
+  padding:2px 7px; border-radius:999px;
+  border:1px solid var(--line); background:transparent; color:rgba(43,36,32,0.55);
   cursor:pointer; appearance:none; -webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232b2420' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 6px center; background-size:11px;
-  padding-right:22px;
+  background-repeat:no-repeat; background-position:right 5px center; background-size:9px;
+  padding-right:18px;
   transition:border-color .2s;
 }
 .lang-switcher select:hover{ border-color:var(--raspberry); }
 html[dir="rtl"] .lang-switcher select{
-  background-position:left 6px center; padding-right:10px; padding-left:22px;
+  background-position:left 5px center; padding-right:7px; padding-left:18px;
 }
 
 /* ---------- RTL (Arab & Urdu) ---------- */
