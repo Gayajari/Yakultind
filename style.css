@@ -131,8 +131,8 @@ img{max-width:100%;}
    supaya bar-slots di halaman lain (mis. watch.html) tidak ikut berubah.
    Dibikin lebih padat/mepet (gap & padding diperkecil) sesuai request. */
 .site-header .bar-slots{ gap:4px; padding:0 15px 5px; }
-.site-header .bar-slots a{ font-size:10.5px; padding:4px 9px; gap:4px; }
-.site-header .bar-slots svg{ width:11px; height:11px; }
+.site-header .bar-slots a{ font-size:9.5px; padding:3px 7px; gap:3px; }
+.site-header .bar-slots svg{ width:9px; height:9px; }
 
 /* ---------- Nav row (Kembali + Home) ---------- */
 .nav-row{
@@ -159,13 +159,14 @@ img{max-width:100%;}
    Dibikin lebih padat/mepet (gap & padding diperkecil) sesuai request. */
 .chips{
   display:flex; align-items:center; gap:5px;
-  padding:5px 0 5px max(20px, calc((100% - 1120px) / 2 + 20px));
+  padding:5px 0 5px max(15px, calc((100% - 1120px) / 2 + 15px));
   position:sticky; top:var(--header-h, 108px); z-index:30;
-  background:var(--cream);
+  background:rgba(255,248,240,0.92);
+  backdrop-filter:blur(10px);
 }
 .chips-scroll{
   display:flex; gap:5px; overflow-x:auto; scrollbar-width:none;
-  padding-right:max(20px, calc((100% - 1120px) / 2 + 20px));
+  padding-right:max(15px, calc((100% - 1120px) / 2 + 15px));
 }
 .chips-scroll::-webkit-scrollbar{ display:none; }
 .chip{
@@ -183,7 +184,7 @@ img{max-width:100%;}
    dengan padding lebar per tombol. Jarak & padding dipadatkan/mepetkan. */
 .tabs{
   display:flex; gap:6px;
-  margin:5px 20px;
+  margin:5px 15px;
 }
 .tab{
   flex:0 0 auto;
@@ -385,7 +386,7 @@ body{ padding-bottom:66px; }
 .lang-switcher select{
   font-family:'Inter',sans-serif; font-size:10px; font-weight:500;
   padding:2px 7px; border-radius:999px;
-  border:1px solid var(--line); background:transparent; color:rgba(43,36,32,0.55);
+  border:1.5px solid var(--ink); background:transparent; color:var(--ink);
   cursor:pointer; appearance:none; -webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232b2420' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat:no-repeat; background-position:right 5px center; background-size:9px;
