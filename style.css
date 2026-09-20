@@ -47,7 +47,7 @@ img{max-width:100%;}
 .header-top #search-toggle{ justify-self:end; }
 .icon-round{
   display:flex; align-items:center; justify-content:center;
-  width:32px; height:32px; border-radius:50%;
+  width:34px; height:34px; border-radius:50%;
   border:1.5px solid var(--line); background:var(--card); color:var(--ink);
   transition:border-color .2s, color .2s, background .2s;
   flex-shrink:0;
@@ -56,9 +56,9 @@ img{max-width:100%;}
 .icon-round.active{ background:var(--ink); color:var(--cream); border-color:var(--ink); }
 .home-btn{
   display:inline-flex; align-items:center; gap:5px;
-  padding:6px 11px; border-radius:999px;
+  padding:7px 12px; border-radius:999px;
   border:1.5px solid var(--line); background:var(--card);
-  font-size:11.5px; font-weight:500; color:var(--ink);
+  font-size:12.5px; font-weight:500; color:var(--ink);
   transition:border-color .2s, background .2s, color .2s;
   flex-shrink:0; white-space:nowrap;
 }
@@ -130,9 +130,9 @@ img{max-width:100%;}
 /* Baris kedua header (Telegram / Tutorial download) — di-scope ke .site-header
    supaya bar-slots di halaman lain (mis. watch.html) tidak ikut berubah.
    Dibikin lebih padat/mepet (gap & padding diperkecil) sesuai request. */
-.site-header .bar-slots{ gap:4px; padding:0 15px 5px; }
-.site-header .bar-slots a{ font-size:9.5px; padding:3px 7px; gap:3px; }
-.site-header .bar-slots svg{ width:9px; height:9px; }
+.site-header .bar-slots{ gap:5px; padding:0 15px 5px; }
+.site-header .bar-slots a{ font-size:11px; padding:5px 10px; gap:4px; }
+.site-header .bar-slots svg{ width:11px; height:11px; }
 
 /* ---------- Nav row (Kembali + Home) ---------- */
 .nav-row{
@@ -174,8 +174,8 @@ img{max-width:100%;}
 }
 .chips-scroll::-webkit-scrollbar{ display:none; }
 .chip{
-  flex-shrink:0; font-size:10.5px; font-weight:500;
-  padding:4px 9px; border-radius:999px;
+  flex-shrink:0; font-size:12px; font-weight:500;
+  padding:6px 12px; border-radius:999px;
   border:1.5px solid var(--line); background:var(--card);
   transition:all .2s;
 }
@@ -193,9 +193,9 @@ img{max-width:100%;}
 .tab{
   flex:0 0 auto;
   white-space:nowrap; text-align:center;
-  padding:5px 12px; border-radius:999px;
+  padding:6px 14px; border-radius:999px;
   border:1.5px solid var(--line); background:var(--card);
-  font-size:10.5px; font-weight:500; color:var(--ink);
+  font-size:12px; font-weight:500; color:var(--ink);
   transition:all .2s;
 }
 .tab.active{ background:var(--ink); color:var(--cream); border-color:var(--ink); }
@@ -383,25 +383,26 @@ body{ padding-bottom:66px; }
 }
 
 /* ---------- Language switcher ---------- */
-/* Dibikin tipis: border 1px, padding & tinggi diperkecil */
+/* Gaya & tinggi disamakan dengan chip (font 12px, padding 6px, border 1.5px),
+   jarak ke baris Telegram di atas dan chips di bawah sama-sama 5px. */
 .lang-switcher{
-  display:flex; justify-content:flex-end;
-  padding:0 15px 3px; max-width:1120px; margin:0 auto;
+  display:flex; justify-content:flex-end; align-items:center;
+  padding:0 15px; max-width:1120px; margin:0 auto;
   line-height:1;
 }
 .lang-switcher select{
-  font-family:'Inter',sans-serif; font-size:9.5px; font-weight:500; line-height:1.2;
+  font-family:'Inter',sans-serif; font-size:12px; font-weight:500; line-height:1.2;
   height:auto; min-height:0; margin:0;
-  padding:1px 15px 1px 6px; border-radius:999px;
-  border:1px solid rgba(43,36,32,0.35); background:transparent; color:var(--ink);
+  padding:6px 26px 6px 12px; border-radius:999px;
+  border:1.5px solid var(--line); background-color:var(--card); color:var(--ink);
   cursor:pointer; appearance:none; -webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232b2420' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 4px center; background-size:8px;
+  background-repeat:no-repeat; background-position:right 10px center; background-size:10px;
   transition:border-color .2s;
 }
 .lang-switcher select:hover{ border-color:var(--raspberry); }
 html[dir="rtl"] .lang-switcher select{
-  background-position:left 4px center; padding-right:6px; padding-left:15px;
+  background-position:left 10px center; padding-right:12px; padding-left:26px;
 }
 
 /* ---------- RTL (Arab & Urdu) ---------- */
