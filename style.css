@@ -407,3 +407,4 @@ html[dir="rtl"] .lang-switcher{ justify-content:flex-start; }
 html[dir="rtl"] .card .cat-tag{ left:auto; right:10px; }
 html[dir="rtl"] .card .thumb .count{ right:auto; left:8px; }
 html[dir="rtl"] .watch-cat{ direction:rtl; }
+. 
