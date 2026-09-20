@@ -15,11 +15,11 @@
 
 <header class="site-header">
   <div class="header-top">
-    <a href="/" class="home-btn">
+    <a href="index.html" class="home-btn">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
       <span data-i18n="home">Home</span>
     </a>
-    <a href="/" class="logo">Yakult<em>ind</em></a>
+    <a href="index.html" class="logo">Yakult<em>ind</em></a>
     <button type="button" class="icon-round" id="search-toggle" aria-label="Pencarian" aria-expanded="false">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </button>
@@ -106,18 +106,18 @@
     const cover = photos[0] || '';
     return `
       <article class="card">
-        <a class="thumb" href="/w/${p.short_code || p.slug || p.id}">
+        <a class="thumb" href="/watch/${p.short_code || p.slug || p.id}">
           <span class="cat-tag">${escapeHtml(p.kategori || 'Umum')}</span>
           ${photos.length > 1 ? `<span class="count">${photos.length} ${window.t ? t('foto') : 'foto'}</span>` : ''}
           <img src="${cover}" alt="${escapeHtml(p.judul)}" loading="lazy">
         </a>
         <div class="card-body">
-          <h3><a href="/w/${p.short_code || p.slug || p.id}">${escapeHtml(p.judul)}</a></h3>
+          <h3><a href="/watch/${p.short_code || p.slug || p.id}">${escapeHtml(p.judul)}</a></h3>
           <div class="card-footer">
             <div class="card-meta">
               <span class="date">${fmtDate(p.dibuat_pada)}</span>
             </div>
-            <a class="btn-pill" href="/w/${p.short_code || p.slug || p.id}">${window.t ? t('lihat') : 'Lihat'}</a>
+            <a class="btn-pill" href="/watch/${p.short_code || p.slug || p.id}">${window.t ? t('lihat') : 'Lihat'}</a>
           </div>
         </div>
       </article>`;
