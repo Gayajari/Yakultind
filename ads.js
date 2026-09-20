@@ -6,7 +6,7 @@
    Cara pakai di HTML:
    1. Slot biasa (inline, di posisi tertentu):
       <div class="ad-slot" data-ad="banner50"></div>   (atau "banner250" / "native")
-   2. Native banner 2 kolom di mobile (kecil-kecil seperti grid post):
+   2. Native banner 2 kartu di mobile (kecil-kecil seperti grid post):
       <div class="ad-slot" data-ad="native" data-cols="2"></div>
       (tanpa data-cols, native tetap 1 kartu seperti sebelumnya)
    3. Sticky banner (nempel di bawah layar, sekali per halaman):
@@ -22,16 +22,22 @@
     stickyDesktop: { key:'9185f3cf2c5c810da2b1f2f335ba496e', width:728, height:90 }
   };
 
-  /* Pengaturan native 2 kolom di mobile (aktif kalau slot punya data-cols="2").
-     Caranya: iklan dirender di "kanvas" lebar layoutWidth supaya widget Adsterra
-     menampilkan 2 kartu berdampingan, lalu seluruhnya diperkecil (scale) agar pas
-     dengan lebar layar. rowHeight = tinggi 1 baris kartu (sebelum diperkecil).
-     - Kalau yang muncul cuma 1 kartu  -> naikkan layoutWidth (mis. 600 / 640)
-     - Kalau muncul 3 kartu            -> turunkan layoutWidth (mis. 500 / 520)
-     - Kalau kartu kepotong bawahnya   -> naikkan rowHeight
-     - Kalau ada ruang kosong di bawah -> turunkan rowHeight
-     Bisa juga di-override per slot: data-layout-width="600" data-row-height="280" */
-  const NATIVE_2COL = { layoutWidth: 560, rowHeight: 260 };
+  /* Pengaturan native 2 kartu di mobile (aktif kalau slot punya data-cols="2").
+     Caranya: widget Adsterra dirender di kanvas lebar (canvasWidth) sehingga
+     tampil BARIS seperti di desktop (4 kartu berjajar), lalu yang ditampilkan
+     hanya 2 kartu pertama (visibleWidth = lebar area yang terlihat dari kiri),
+     kemudian diperkecil supaya pas selebar layar. Hasilnya 2 iklan berbeda
+     berdampingan, ukurannya kira-kira sama dengan 2 kolom grid post.
+     rowHeight = tinggi 1 baris kartu (sebelum diperkecil).
+     Cara menyetel setelah dites di HP:
+     - Kartu ke-3 mengintip di kanan      -> kecilkan visibleWidth (mis. 490)
+     - Kartu ke-2 kepotong di kanan       -> besarkan visibleWidth (mis. 530)
+     - Yang muncul masih 1 kartu / tumpuk -> besarkan canvasWidth (mis. 1100)
+     - Teks/judul kartu kepotong bawahnya -> besarkan rowHeight
+     - Ada ruang kosong di bawah kartu    -> kecilkan rowHeight
+     Bisa juga di-override per slot:
+     data-canvas-width="1100" data-visible-width="530" data-row-height="300" */
+  const NATIVE_2COL = { canvasWidth: 1000, visibleWidth: 510, rowHeight: 290 };
 
   function buildSrcdoc(ad){
     if(ad.native){
@@ -58,22 +64,24 @@
         return iframe;
       }
 
-      // Mobile, mode 2 kolom (opt-in lewat data-cols="2"): render di kanvas lebar
-      // lalu perkecil supaya 2 kartu native muncul berdampingan seperti grid post.
+      // Mobile, mode 2 kartu (opt-in lewat data-cols="2"): render di kanvas lebar
+      // (tampil baris seperti desktop), tampilkan 2 kartu pertama, lalu perkecil
+      // supaya pas selebar layar — mirip 2 kolom grid post.
       if(opts.cols === 2){
-        const layoutWidth = opts.layoutWidth || NATIVE_2COL.layoutWidth;
+        const canvasWidth = opts.canvasWidth || NATIVE_2COL.canvasWidth;
+        const visibleWidth = opts.visibleWidth || NATIVE_2COL.visibleWidth;
         const rowHeight = opts.rowHeight || NATIVE_2COL.rowHeight;
 
         const wrap = document.createElement('div');
         wrap.style.cssText = 'width:100%; overflow:hidden; border-radius:12px; position:relative;';
 
-        iframe.style.cssText = `width:${layoutWidth}px; height:${rowHeight + 240}px; border:0; display:block; transform-origin:0 0;`;
+        iframe.style.cssText = `width:${canvasWidth}px; max-width:none; height:${rowHeight + 200}px; border:0; display:block; transform-origin:0 0;`;
         wrap.appendChild(iframe);
 
         const fit = () => {
           const w = wrap.clientWidth;
           if(!w) return;
-          const scale = w / layoutWidth;
+          const scale = w / visibleWidth;
           iframe.style.transform = `scale(${scale})`;
           wrap.style.height = Math.round(rowHeight * scale) + 'px';
         };
@@ -109,7 +117,8 @@
       const cropHeight = slot.dataset.crop ? Number(slot.dataset.crop) : undefined;
       const opts = {
         cols: slot.dataset.cols ? Number(slot.dataset.cols) : 1,
-        layoutWidth: slot.dataset.layoutWidth ? Number(slot.dataset.layoutWidth) : undefined,
+        canvasWidth: slot.dataset.canvasWidth ? Number(slot.dataset.canvasWidth) : undefined,
+        visibleWidth: slot.dataset.visibleWidth ? Number(slot.dataset.visibleWidth) : undefined,
         rowHeight: slot.dataset.rowHeight ? Number(slot.dataset.rowHeight) : undefined
       };
       const iframe = makeIframe(slot.dataset.ad, cropHeight, opts);
