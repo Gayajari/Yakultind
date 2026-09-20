@@ -157,13 +157,16 @@ img{max-width:100%;}
    margin -20px supaya background menutup penuh lebar wrap, lalu padding-left 15px
    supaya rata kiri PAS dengan tombol Home / Telegram di header (juga 15px).
    Padding bawah 0 — jarak ke baris tabs diatur oleh padding-top tabs (5px). */
-.chips{
-  display:flex; align-items:center; gap:5px;
-  margin:0 -20px;
-  padding:5px 0 0 15px;
+.sticky-bars{
   position:sticky; top:var(--header-h, 108px); z-index:30;
+  margin:0 -20px;
   background:rgba(255,248,240,0.92);
   backdrop-filter:blur(10px);
+}
+.chips{
+  display:flex; align-items:center; gap:5px;
+  margin:0;
+  padding:5px 0 0 15px;
 }
 .chips-scroll{
   display:flex; gap:5px; overflow-x:auto; scrollbar-width:none;
@@ -180,15 +183,12 @@ img{max-width:100%;}
 .chip:not(.active):hover{ border-color:var(--raspberry); color:var(--raspberry); }
 
 /* ---------- Tabs (Terbaru / Terlama / Terpopuler) ----------
-   Sticky tepat di bawah chips (offset --header-chips-h = tinggi header + chips,
-   di-set lewat JS di index.html). Jarak ke chips di atasnya 5px. */
+   Chips + tabs dibungkus satu .sticky-bars (sticky di bawah header), jadi
+   keduanya selalu menempel rapat: jarak chips ke tabs tepat 5px. */
 .tabs{
   display:flex; gap:6px;
-  margin:0 -20px;
+  margin:0;
   padding:5px 15px 5px;
-  position:sticky; top:var(--header-chips-h, 148px); z-index:25;
-  background:rgba(255,248,240,0.92);
-  backdrop-filter:blur(10px);
 }
 .tab{
   flex:0 0 auto;
