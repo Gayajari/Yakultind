@@ -22,22 +22,18 @@
     stickyDesktop: { key:'9185f3cf2c5c810da2b1f2f335ba496e', width:728, height:90 }
   };
 
-  /* Pengaturan native 2 kartu di mobile (aktif kalau slot punya data-cols="2").
-     Caranya: widget Adsterra dirender di kanvas lebar (canvasWidth) sehingga
-     tampil BARIS seperti di desktop (4 kartu berjajar), lalu yang ditampilkan
-     hanya 2 kartu pertama (visibleWidth = lebar area yang terlihat dari kiri),
-     kemudian diperkecil supaya pas selebar layar. Hasilnya 2 iklan berbeda
-     berdampingan, ukurannya kira-kira sama dengan 2 kolom grid post.
-     rowHeight = tinggi 1 baris kartu (sebelum diperkecil).
-     Cara menyetel setelah dites di HP:
-     - Kartu ke-3 mengintip di kanan      -> kecilkan visibleWidth (mis. 490)
-     - Kartu ke-2 kepotong di kanan       -> besarkan visibleWidth (mis. 530)
-     - Yang muncul masih 1 kartu / tumpuk -> besarkan canvasWidth (mis. 1100)
-     - Teks/judul kartu kepotong bawahnya -> besarkan rowHeight
-     - Ada ruang kosong di bawah kartu    -> kecilkan rowHeight
-     Bisa juga di-override per slot:
-     data-canvas-width="1100" data-visible-width="530" data-row-height="300" */
-  const NATIVE_2COL = { canvasWidth: 1000, visibleWidth: 510, rowHeight: 290 };
+  /* Native 2 kartu di mobile (aktif kalau slot punya data-cols="2").
+     Widget Adsterra dirender di kanvas lebar (canvasWidth) sehingga tampil BARIS
+     seperti di desktop. Lalu script MENGUKUR sendiri posisi kartu di dalam widget
+     (iframe ini same-origin) dan memotong tepat di 2 kartu pertama, kemudian
+     memperkecilnya supaya pas selebar layar. Jadi tidak perlu tebak-tebak angka.
+     - canvasWidth : lebar kanvas. Kalau yang muncul cuma 1 kartu per baris,
+                     besarkan (mis. 1100 / 1200).
+     - visibleWidth, rowHeight : HANYA dipakai sebagai cadangan kalau pengukuran
+                     otomatis gagal (mis. widget belum termuat setelah ±15 detik).
+     Bisa di-override per slot:
+     data-canvas-width="1100" data-visible-width="510" data-row-height="400" */
+  const NATIVE_2COL = { canvasWidth: 1000, visibleWidth: 510, rowHeight: 400 };
 
   function buildSrcdoc(ad){
     if(ad.native){
@@ -65,31 +61,93 @@
       }
 
       // Mobile, mode 2 kartu (opt-in lewat data-cols="2"): render di kanvas lebar
-      // (tampil baris seperti desktop), tampilkan 2 kartu pertama, lalu perkecil
-      // supaya pas selebar layar — mirip 2 kolom grid post.
+      // (tampil baris seperti desktop), ukur & potong tepat 2 kartu pertama, lalu
+      // perkecil supaya pas selebar layar — mirip 2 kolom grid post.
       if(opts.cols === 2){
         const canvasWidth = opts.canvasWidth || NATIVE_2COL.canvasWidth;
-        const visibleWidth = opts.visibleWidth || NATIVE_2COL.visibleWidth;
-        const rowHeight = opts.rowHeight || NATIVE_2COL.rowHeight;
+        const fallback = {
+          left: 0, top: 0,
+          width: opts.visibleWidth || NATIVE_2COL.visibleWidth,
+          height: opts.rowHeight || NATIVE_2COL.rowHeight
+        };
 
         const wrap = document.createElement('div');
-        wrap.style.cssText = 'width:100%; overflow:hidden; border-radius:12px; position:relative;';
+        wrap.style.cssText = 'width:100%; height:0; overflow:hidden; border-radius:12px; position:relative;';
 
-        iframe.style.cssText = `width:${canvasWidth}px; max-width:none; height:${rowHeight + 200}px; border:0; display:block; transform-origin:0 0;`;
+        iframe.style.cssText = `width:${canvasWidth}px; max-width:none; height:700px; border:0; display:block; transform-origin:0 0;`;
         wrap.appendChild(iframe);
 
-        const fit = () => {
+        let crop = null;          // area 2 kartu hasil pengukuran (koordinat di dalam kanvas)
+        let useFallback = false;  // true kalau pengukuran gagal sampai batas waktu
+
+        const apply = () => {
+          const c = crop || (useFallback ? fallback : null);
           const w = wrap.clientWidth;
-          if(!w) return;
-          const scale = w / visibleWidth;
-          iframe.style.transform = `scale(${scale})`;
-          wrap.style.height = Math.round(rowHeight * scale) + 'px';
+          if(!c || !w) return;
+          const scale = w / c.width;
+          iframe.style.transform = `translate(${-c.left * scale}px, ${-c.top * scale}px) scale(${scale})`;
+          wrap.style.height = Math.round(c.height * scale) + 'px';
         };
+
+        // Cari 2 kartu pertama (1 baris) di dalam widget dan hitung area potongnya.
+        const measure = () => {
+          let doc;
+          try { doc = iframe.contentDocument; } catch(e){ return null; }
+          if(!doc || !doc.body) return null;
+          const root = doc.getElementById('container-' + ad.key) || doc.body;
+
+          const seen = {};
+          const cards = [];
+          root.querySelectorAll('img').forEach(img => {
+            if(!img.complete || !img.naturalWidth) return;
+            const ir = img.getBoundingClientRect();
+            if(ir.width < 60 || ir.height < 40 || ir.width > canvasWidth * 0.8) return;
+            // naik ke pembungkus kartu (selama lebarnya tidak jauh melebihi gambar)
+            let el = img;
+            while(el.parentElement && el.parentElement !== root && el.parentElement !== doc.body){
+              const pr = el.parentElement.getBoundingClientRect();
+              if(pr.width > ir.width * 1.35) break;
+              el = el.parentElement;
+            }
+            const r = el.getBoundingClientRect();
+            const k = Math.round(r.left) + '_' + Math.round(r.top);
+            if(seen[k]) return;
+            seen[k] = true;
+            cards.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+          });
+          if(!cards.length) return null;
+
+          cards.sort((a, b) => a.top - b.top || a.left - b.left);
+          const firstRow = cards.filter(c => Math.abs(c.top - cards[0].top) < 40)
+                                .sort((a, b) => a.left - b.left)
+                                .slice(0, 2);
+          const left = Math.min(...firstRow.map(c => c.left));
+          const right = Math.max(...firstRow.map(c => c.right));
+          const top = Math.min(...firstRow.map(c => c.top));
+          const bottom = Math.max(...firstRow.map(c => c.bottom));
+          if(right - left < 50 || bottom - top < 50) return null;
+          return { left, top, width: right - left, height: bottom - top };
+        };
+
+        let tries = 0;
+        const timer = setInterval(() => {
+          tries++;
+          let m = null;
+          try { m = measure(); } catch(e){ m = null; }
+          if(m){
+            crop = m;
+            apply();
+          }
+          if(tries >= 50){            // ±15 detik
+            clearInterval(timer);
+            if(!crop){ useFallback = true; apply(); }
+          }
+        }, 300);
+
         if(window.ResizeObserver){
-          new ResizeObserver(fit).observe(wrap);
+          new ResizeObserver(apply).observe(wrap);
         }
-        window.addEventListener('resize', fit);
-        requestAnimationFrame(fit);
+        window.addEventListener('resize', apply);
         return wrap;
       }
 
