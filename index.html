@@ -34,27 +34,19 @@
 </header>
 
 <script>
-  /* Menghitung tinggi header (--header-h) dan tinggi header + baris chips
-     (--header-chips-h) secara dinamis, supaya baris chips dan baris tabs
-     (Terbaru/Terlama/Terpopuler) sticky menempel rapat satu sama lain.
-     Hanya urusan tampilan — tidak menyentuh data, routing, atau fungsi lain. */
+  /* Menghitung tinggi header secara dinamis untuk offset sticky baris
+     chips + tabs (.sticky-bars). Hanya urusan tampilan — tidak menyentuh
+     data, routing, atau fungsi lain. */
   (function(){
     var headerEl = document.querySelector('.site-header');
-    var chipsEl = document.getElementById('chips');
-    function setHeights(){
-      var h = headerEl.offsetHeight;
-      var c = chipsEl ? chipsEl.offsetHeight : 0;
-      var root = document.documentElement.style;
-      root.setProperty('--header-h', h + 'px');
-      root.setProperty('--header-chips-h', (h + c) + 'px');
+    function setHeaderHeight(){
+      document.documentElement.style.setProperty('--header-h', headerEl.offsetHeight + 'px');
     }
-    setHeights();
-    window.addEventListener('resize', setHeights);
-    window.addEventListener('load', setHeights);
+    setHeaderHeight();
+    window.addEventListener('resize', setHeaderHeight);
+    window.addEventListener('load', setHeaderHeight);
     if(window.ResizeObserver){
-      var ro = new ResizeObserver(setHeights);
-      ro.observe(headerEl);
-      if(chipsEl) ro.observe(chipsEl);
+      new ResizeObserver(setHeaderHeight).observe(headerEl);
     }
   })();
 </script>
@@ -62,11 +54,13 @@
 <div class="nav-row" id="nav-row"></div>
 
 <main class="wrap">
-  <div class="chips" id="chips"></div>
-  <div class="tabs" id="tabs">
-    <button class="tab active" data-sort="baru" data-i18n="terbaru">Terbaru</button>
-    <button class="tab" data-sort="lama" data-i18n="terlama">Terlama</button>
-    <button class="tab" data-sort="populer" data-i18n="terpopuler">Terpopuler</button>
+  <div class="sticky-bars" id="sticky-bars">
+    <div class="chips" id="chips"></div>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-sort="baru" data-i18n="terbaru">Terbaru</button>
+      <button class="tab" data-sort="lama" data-i18n="terlama">Terlama</button>
+      <button class="tab" data-sort="populer" data-i18n="terpopuler">Terpopuler</button>
+    </div>
   </div>
 
   <div class="ad-slot" data-ad="native" data-crop="295"></div>
