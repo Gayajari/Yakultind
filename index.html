@@ -40,7 +40,7 @@
   (function(){
     var headerEl = document.querySelector('.site-header');
     function setHeaderHeight(){
-      document.documentElement.style.setProperty('--header-h', headerEl.offsetHeight + 'px');
+      document.documentElement.style.setProperty('--header-h', headerEl.getBoundingClientRect().height + 'px');
     }
     setHeaderHeight();
     window.addEventListener('resize', setHeaderHeight);
