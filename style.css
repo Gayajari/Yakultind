@@ -140,6 +140,8 @@ img{max-width:100%;}
   max-width:1120px; margin:0 auto;
   padding:8px 20px 4px;
 }
+/* Kalau nav-row kosong (mis. di home), jangan sisakan jarak nganggur */
+.nav-row:empty{ display:none; }
 .nav-btn{
   display:inline-flex; align-items:center; gap:7px;
   padding:9px 16px; border-radius:999px;
@@ -150,23 +152,22 @@ img{max-width:100%;}
 .nav-btn:hover{ border-color:var(--raspberry); background:rgba(232,93,117,0.06); }
 
 /* ---------- Category chips ---------- */
-/* Sticky di bawah site-header (offset dinamis via --header-h, di-set lewat JS)
-   Full-bleed width (bukan max-width+margin:auto) supaya background solid
-   menutup penuh lebar layar dan kartu di belakangnya tidak menembus,
-   sementara konten chip tetap sejajar dengan container 1120px lewat padding.
-   Chip "Semua" sengaja dipisah di luar area scroll supaya diam di tempat —
-   cuma chip kategori lainnya (Jilbab/Rare/dst) yang ikut geser.
-   Dibikin lebih padat/mepet (gap & padding diperkecil) sesuai request. */
+/* Sticky di bawah site-header (offset dinamis via --header-h, di-set lewat JS).
+   .chips berada di dalam main.wrap (padding kiri-kanan 20px), jadi dikasih
+   margin -20px supaya background menutup penuh lebar wrap, lalu padding-left 15px
+   supaya rata kiri PAS dengan tombol Home / Telegram di header (juga 15px).
+   Padding bawah 0 — jarak ke baris tabs diatur oleh padding-top tabs (5px). */
 .chips{
   display:flex; align-items:center; gap:5px;
-  padding:5px 0 5px max(15px, calc((100% - 1120px) / 2 + 15px));
+  margin:0 -20px;
+  padding:5px 0 0 15px;
   position:sticky; top:var(--header-h, 108px); z-index:30;
   background:rgba(255,248,240,0.92);
   backdrop-filter:blur(10px);
 }
 .chips-scroll{
   display:flex; gap:5px; overflow-x:auto; scrollbar-width:none;
-  padding-right:max(15px, calc((100% - 1120px) / 2 + 15px));
+  padding-right:15px;
 }
 .chips-scroll::-webkit-scrollbar{ display:none; }
 .chip{
@@ -179,12 +180,12 @@ img{max-width:100%;}
 .chip:not(.active):hover{ border-color:var(--raspberry); color:var(--raspberry); }
 
 /* ---------- Tabs (Terbaru / Terlama / Terpopuler) ----------
-   Disamakan PERSIS ke segmented-control tab bar Vipku: satu pil menyatu,
-   lebar penuh, tiap tombol bagi rata (flex:1) — bukan lagi width:fit-content
-   dengan padding lebar per tombol. Jarak & padding dipadatkan/mepetkan. */
+   Sticky tepat di bawah chips (offset --header-chips-h = tinggi header + chips,
+   di-set lewat JS di index.html). Jarak ke chips di atasnya 5px. */
 .tabs{
   display:flex; gap:6px;
-  margin:0; padding:5px 15px;
+  margin:0 -20px;
+  padding:5px 15px 5px;
   position:sticky; top:var(--header-chips-h, 148px); z-index:25;
   background:rgba(255,248,240,0.92);
   backdrop-filter:blur(10px);
