@@ -34,18 +34,27 @@
 </header>
 
 <script>
-  /* Menghitung tinggi header secara dinamis untuk offset sticky baris kategori.
+  /* Menghitung tinggi header (--header-h) dan tinggi header + baris chips
+     (--header-chips-h) secara dinamis, supaya baris chips dan baris tabs
+     (Terbaru/Terlama/Terpopuler) sticky menempel rapat satu sama lain.
      Hanya urusan tampilan — tidak menyentuh data, routing, atau fungsi lain. */
   (function(){
     var headerEl = document.querySelector('.site-header');
-    function setHeaderHeight(){
-      document.documentElement.style.setProperty('--header-h', headerEl.offsetHeight + 'px');
+    var chipsEl = document.getElementById('chips');
+    function setHeights(){
+      var h = headerEl.offsetHeight;
+      var c = chipsEl ? chipsEl.offsetHeight : 0;
+      var root = document.documentElement.style;
+      root.setProperty('--header-h', h + 'px');
+      root.setProperty('--header-chips-h', (h + c) + 'px');
     }
-    setHeaderHeight();
-    window.addEventListener('resize', setHeaderHeight);
-    window.addEventListener('load', setHeaderHeight);
+    setHeights();
+    window.addEventListener('resize', setHeights);
+    window.addEventListener('load', setHeights);
     if(window.ResizeObserver){
-      new ResizeObserver(setHeaderHeight).observe(headerEl);
+      var ro = new ResizeObserver(setHeights);
+      ro.observe(headerEl);
+      if(chipsEl) ro.observe(chipsEl);
     }
   })();
 </script>
