@@ -6,13 +6,12 @@
    Cara pakai di HTML:
    1. Slot biasa (inline, di posisi tertentu):
       <div class="ad-slot" data-ad="banner50"></div>   (atau "banner250" / "native")
-   2. Native banner — logika SAMA dengan project NOKT HUB (tinggi tetap, tanpa
-      pengukuran otomatis):
-      - MOBILE (lebar < 900px): iframe ruang lega 500px + dibungkus crop tinggi tetap
-        (default 340px) pas 1 kartu. Ubah per slot: data-crop="340"
-      - DESKTOP (lebar >= 900px): tanpa crop, tinggi tetap (default 240px).
-        Ubah per slot: data-desktop-height="240"
-      Contoh: <div class="ad-slot" data-ad="native" data-crop="340" data-desktop-height="240"></div>
+   2. Native banner:
+      - MOBILE (lebar < 900px): logika Yakultind yang lama — iframe ruang lega 500px
+        dibungkus crop tinggi tetap pas 1 kartu. Ubah per slot: data-crop="295"
+      - DESKTOP (lebar >= 900px): logika NOKT HUB — tanpa crop, tinggi tetap
+        (default 240px). Ubah per slot: data-desktop-height="240"
+      Contoh: <div class="ad-slot" data-ad="native" data-crop="295" data-desktop-height="240"></div>
    3. Sticky banner (nempel di bawah layar, sekali per halaman):
       <div id="ad-sticky-mount"></div>  — taruh sebelum </body>
 
@@ -26,46 +25,57 @@
     stickyDesktop: { key:'9185f3cf2c5c810da2b1f2f335ba496e', width:728, height:90 }
   };
 
-  /* Angka native banner (sama dengan project NOKT HUB) */
   const NATIVE_DESKTOP_BREAKPOINT = 900;
-  const NATIVE_MOBILE_INNER_HEIGHT = 500;    // ruang lega di dalam iframe (mobile)
-  const NATIVE_MOBILE_CROP_DEFAULT = 340;    // tinggi pas 1 kartu (mobile)
-  const NATIVE_DESKTOP_HEIGHT_DEFAULT = 240; // tinggi tetap desktop
+  const NATIVE_DESKTOP_HEIGHT_DEFAULT = 240; // tinggi tetap desktop (logika NOKT HUB)
 
   function buildSrcdoc(ad){
     if(ad.native){
-      return `<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head><body><div id="container-${ad.key}"></div><script async data-cfasync="false" src="https://inputoppose.com/${ad.key}/invoke.js"><\/script></body></html>`;
+      return `<html><body style='margin:0;background:transparent;overflow:hidden'><script async data-cfasync='false' src='https://inputoppose.com/${ad.key}/invoke.js'></script><div id='container-${ad.key}'></div></body></html>`;
     }
     return `<html><body style='margin:0;background:transparent;overflow:hidden'><script>atOptions={'key':'${ad.key}','format':'iframe','height':${ad.height},'width':${ad.width},'params':{}};</script><script src='https://inputoppose.com/${ad.key}/invoke.js'></script></body></html>`;
   }
 
-  function makeIframe(adName, cropHeightMobile, desktopHeight){
+  // srcdoc native versi NOKT HUB (dipakai di DESKTOP saja)
+  function buildNativeSrcdocNokt(ad){
+    return `<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head><body><div id="container-${ad.key}"></div><script async data-cfasync="false" src="https://inputoppose.com/${ad.key}/invoke.js"><\/script></body></html>`;
+  }
+
+  function makeIframe(adName, cropHeight, desktopHeight){
     const ad = ADS[adName];
     if(!ad) return null;
     const iframe = document.createElement('iframe');
-    iframe.setAttribute('sandbox', ad.native ? 'allow-scripts allow-same-origin allow-popups' : 'allow-scripts allow-same-origin');
-    iframe.setAttribute('scrolling', 'no');
     iframe.loading = 'lazy';
     iframe.title = 'Sponsored';
-    iframe.srcdoc = buildSrcdoc(ad);
 
     if(ad.native){
       const isDesktop = window.innerWidth >= NATIVE_DESKTOP_BREAKPOINT;
 
-      if(!isDesktop){
-        // MOBILE: ruang lega + crop tinggi tetap pas di batas 1 kartu.
-        iframe.style.cssText = `width:100%;height:${NATIVE_MOBILE_INNER_HEIGHT}px;border:0;display:block;`;
-        const crop = document.createElement('div');
-        crop.style.cssText = `width:100%;height:${cropHeightMobile || NATIVE_MOBILE_CROP_DEFAULT}px;overflow:hidden;border-radius:12px;`;
-        crop.appendChild(iframe);
-        return crop;
+      if(isDesktop){
+        // DESKTOP — logika NOKT HUB: tinggi tetap, tidak di-crop, sandbox + popups.
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups');
+        iframe.setAttribute('scrolling', 'no');
+        iframe.srcdoc = buildNativeSrcdocNokt(ad);
+        iframe.style.cssText = `width:100%;height:${desktopHeight || NATIVE_DESKTOP_HEIGHT_DEFAULT}px;border:0;display:block;`;
+        return iframe;
       }
 
-      // DESKTOP: tinggi tetap, tidak di-crop (tampil semua kartu).
-      iframe.style.cssText = `width:100%;height:${desktopHeight || NATIVE_DESKTOP_HEIGHT_DEFAULT}px;border:0;display:block;`;
-      return iframe;
+      // MOBILE — logika Yakultind yang lama (tidak diubah).
+      // Kasih iframe ruang lega di dalam (500px) supaya kartu pertama
+      // PASTI render utuh tanpa kepotong teksnya, lalu crop tampilan luarnya
+      // persis di batas 1 kartu lewat wrapper overflow:hidden. cropHeight bisa
+      // beda-beda per halaman (lewat atribut data-crop) karena tinggi kartu
+      // asli Adsterra bisa sedikit berbeda tergantung lebar kontainer halaman.
+      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+      iframe.srcdoc = buildSrcdoc(ad);
+      iframe.style.cssText = 'width:100%; height:500px; border:0; display:block;';
+      const crop = document.createElement('div');
+      crop.style.cssText = `width:100%; height:${cropHeight || 345}px; overflow:hidden; border-radius:12px;`;
+      crop.appendChild(iframe);
+      return crop;
     }
 
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    iframe.srcdoc = buildSrcdoc(ad);
     iframe.width = ad.width;
     iframe.height = ad.height;
     iframe.style.cssText = 'border:0;';
