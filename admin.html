@@ -844,7 +844,7 @@
     if (file) { cropImgEl.removeAttribute('crossorigin'); loadFileIntoCropper(file); }
   });
 
-  cropConfirmBtn.onclick = () => {
+  cropConfirmBtn.onclick = async () => {
     const stageW = cropStage.clientWidth;
     const stageH = cropStage.clientHeight;
 
@@ -869,16 +869,30 @@
 
     try {
       ctx.drawImage(cropImgEl, centerX - dispW / 2, centerY - dispH / 2, dispW, dispH);
+
       // Semua foto post keluar sebagai WEBP (bukan JPEG) — otomatis lebih kecil
       // ukurannya dibanding JPEG di kualitas yang sama, apa pun format foto asli
       // yang di-upload admin (jpg/png/heic/dll dari galeri, termasuk hasil ChatGPT).
-      canvas.toBlob((blob) => {
-        if(!blob){
-          alert("Foto ini tidak bisa di-crop ulang langsung karena pengaturan akses foto di server. Coba pilih foto baru sebagai gantinya.");
-          return;
-        }
-        closeCropModal(blob);
-      }, "image/webp", 0.82);
+      // Kualitas diturunkan bertahap sampai ukurannya mendekati TARGET_KB (kira-kira
+      // 85-120KB), supaya tidak jomplang antar foto — foto simpel (background polos)
+      // otomatis dapat kualitas lebih tinggi karena sudah kecil dari awal, foto rame
+      // (banyak detail/warna) diturunkan kualitasnya biar tidak jauh lebih besar.
+      const TARGET_KB = 110;   // target atas — di bawah ini dianggap sudah cukup kecil
+      const MIN_QUALITY = 0.5; // batas bawah — jangan sampai kelihatan pecah
+      const toBlob = (q) => new Promise(res => canvas.toBlob(res, "image/webp", q));
+
+      let quality = 0.82;
+      let blob = await toBlob(quality);
+      while (blob && blob.size / 1024 > TARGET_KB && quality > MIN_QUALITY) {
+        quality = Math.max(MIN_QUALITY, quality - 0.1);
+        blob = await toBlob(quality);
+      }
+
+      if(!blob){
+        alert("Foto ini tidak bisa di-crop ulang langsung karena pengaturan akses foto di server. Coba pilih foto baru sebagai gantinya.");
+        return;
+      }
+      closeCropModal(blob);
     } catch (err) {
       // Kalau bucket storage-nya ternyata belum mengizinkan akses lintas domain
       // (CORS), browser akan menolak baca isi canvas ini — bukan bug di kode,
