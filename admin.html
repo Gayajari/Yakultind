@@ -575,7 +575,7 @@
           // Kalau yang di-crop adalah foto lama, tandai URL lamanya supaya
           // dibersihkan dari storage setelah form disimpan (diganti versi baru).
           if(isExisting && item.previewUrl) removedPhotoUrls.push(item.previewUrl);
-          const croppedFile = new File([blob], `crop-${Date.now()}.jpg`, { type:'image/jpeg' });
+          const croppedFile = new File([blob], `crop-${Date.now()}.webp`, { type:'image/webp' });
           photoItems[i] = { file: croppedFile, previewUrl: URL.createObjectURL(blob) };
           renderPhotoGrid();
         }
@@ -600,7 +600,7 @@
       for(const file of files){
         const blob = await openCropperForFile(file);
         if(blob){
-          const croppedFile = new File([blob], `crop-${Date.now()}.jpg`, { type:'image/jpeg' });
+          const croppedFile = new File([blob], `crop-${Date.now()}.webp`, { type:'image/webp' });
           photoItems.push({ file: croppedFile, previewUrl: URL.createObjectURL(blob) });
           renderPhotoGrid();
         }
@@ -612,7 +612,7 @@
   /* ================== ENGINE CROPPING FOTO FLEKSIBEL ==================
      Modal crop gaya aplikasi jaman sekarang: geser (drag/pointer) untuk atur
      posisi, slider/pinch untuk zoom, dan chip rasio (Bebas/1:1/4:5/3:4/16:9/9:16).
-     Output di-render ke <canvas> lalu dikompres jadi JPEG.
+     Output di-render ke <canvas> lalu dikompres jadi WEBP.
 
      3 BUG YANG PERNAH KEJADIAN & SUDAH DIPERBAIKI DI SINI — JANGAN DIULANG
      KALAU EDIT MANUAL:
@@ -869,13 +869,16 @@
 
     try {
       ctx.drawImage(cropImgEl, centerX - dispW / 2, centerY - dispH / 2, dispW, dispH);
+      // Semua foto post keluar sebagai WEBP (bukan JPEG) — otomatis lebih kecil
+      // ukurannya dibanding JPEG di kualitas yang sama, apa pun format foto asli
+      // yang di-upload admin (jpg/png/heic/dll dari galeri, termasuk hasil ChatGPT).
       canvas.toBlob((blob) => {
         if(!blob){
           alert("Foto ini tidak bisa di-crop ulang langsung karena pengaturan akses foto di server. Coba pilih foto baru sebagai gantinya.");
           return;
         }
         closeCropModal(blob);
-      }, "image/jpeg", 0.9);
+      }, "image/webp", 0.82);
     } catch (err) {
       // Kalau bucket storage-nya ternyata belum mengizinkan akses lintas domain
       // (CORS), browser akan menolak baca isi canvas ini — bukan bug di kode,
@@ -974,7 +977,9 @@
   async function uploadPhoto(file){
     const ext = file.name.split('.').pop();
     const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
-    const { error } = await sb.storage.from(BUCKET).upload(path, file);
+    const { error } = await sb.storage.from(BUCKET).upload(path, file, {
+      contentType: file.type || undefined
+    });
     if(error) throw error;
     const { data } = sb.storage.from(BUCKET).getPublicUrl(path);
     return data.publicUrl;
