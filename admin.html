@@ -289,7 +289,10 @@
       </div>
 
       <div class="panel">
-        <h2>Semua post</h2>
+        <h2 style="display:flex; align-items:center; gap:8px;">
+          Semua post
+          <span id="post-total-badge" style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500; color:var(--teal); background:rgba(42,111,111,0.1); padding:3px 10px; border-radius:999px;">0 post</span>
+        </h2>
         <div class="admin-sort-tabs" id="admin-sort-tabs">
           <button type="button" class="admin-sort-tab active" data-sort="baru">Terbaru</button>
           <button type="button" class="admin-sort-tab" data-sort="lama">Terlama</button>
@@ -1050,6 +1053,13 @@
     const { data, error } = await sb.from('posts').select('*').order('dibuat_pada', { ascending:false });
     if(error){ listEl.innerHTML = `<div class="empty-list">Gagal memuat: ${escapeHtml(error.message)}</div>`; return; }
     currentPosts = data || [];
+
+    // Total post = jumlah baris di tabel posts saat ini. Karena loadPosts()
+    // selalu dipanggil ulang setelah publikasi, edit, maupun hapus post,
+    // angka ini otomatis akurat naik/turun mengikuti jumlah post yang benar-benar
+    // ada di database — tidak dihitung manual/disimpan terpisah.
+    const badge = document.getElementById('post-total-badge');
+    if(badge) badge.textContent = `${currentPosts.length} post`;
 
     const cats = [...new Set(currentPosts.map(p => p.kategori).filter(Boolean))];
     document.getElementById('kategori-list').innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">`).join('');
