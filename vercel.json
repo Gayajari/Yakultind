@@ -1,6 +1,28 @@
 {
   "cleanUrls": true,
   "rewrites": [
+    {
+      "source": "/w/:code",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|LinkedInBot|Discordbot|Slackbot|Pinterest|redditbot|vkShare|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
+        }
+      ],
+      "destination": "/api/social-preview?code=:code"
+    },
+    {
+      "source": "/watch/:code",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|LinkedInBot|Discordbot|Slackbot|Pinterest|redditbot|vkShare|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
+        }
+      ],
+      "destination": "/api/social-preview?code=:code"
+    },
     { "source": "/w/:code", "destination": "/watch" },
     { "source": "/watch/:code", "destination": "/watch" }
   ],
