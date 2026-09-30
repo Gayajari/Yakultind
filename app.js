@@ -50,14 +50,25 @@ function detectSocialIcon(nama){
   return SOCIAL_ICONS.default;
 }
 
-/* ---------- Render satu baris bar link dari pasangan kolom [nama,link] site_settings ---------- */
-function renderLinkBar(mountEl, data, pairs){
+/* ---------- Render satu baris bar link dari pasangan kolom [nama,link] site_settings ----------
+   Parameter ke-4 (onLinkClick) OPSIONAL — kalau diisi, tiap link dapat listener klik
+   yang memanggilnya dengan nomor slot asli (1/2/3, dihitung dari posisi di `pairs`
+   SEBELUM difilter, supaya nomornya tetap benar walau ada slot kosong di tengah).
+   Dipakai HANYA oleh loadWatchLinkBar() di bawah untuk memonitor klik 3 slot link
+   watch page — bar link header (initHeader) tetap memanggil tanpa parameter ini,
+   jadi perilakunya sama persis seperti sebelumnya, tidak ikut termonitor. */
+function renderLinkBar(mountEl, data, pairs, onLinkClick){
   if(!mountEl || !data) return;
-  const bars = pairs.map(([namaKey, linkKey]) => [data[namaKey], data[linkKey]])
+  const bars = pairs.map(([namaKey, linkKey], i) => [data[namaKey], data[linkKey], i + 1])
     .filter(([nama, link]) => nama && link);
-  mountEl.innerHTML = bars.map(([nama, link]) =>
-    `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${detectSocialIcon(nama)}${escapeHtml(nama)}</a>`
+  mountEl.innerHTML = bars.map(([nama, link, slotNum]) =>
+    `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer" data-slot="${slotNum}">${detectSocialIcon(nama)}${escapeHtml(nama)}</a>`
   ).join('');
+  if(onLinkClick){
+    mountEl.querySelectorAll('a[data-slot]').forEach(a => {
+      a.addEventListener('click', () => onLinkClick(Number(a.dataset.slot)));
+    });
+  }
 }
 
 /* ==========================================================
@@ -163,12 +174,19 @@ function applyFavicon(){
   }).catch(() => {});
 }
 /* ---------- Bar link khusus watch page — dipanggil manual SETELAH konten post
-   dirender, karena elemen mount-nya baru ada di DOM saat itu ---------- */
+   dirender, karena elemen mount-nya baru ada di DOM saat itu ----------
+   Tiap klik di salah satu dari 3 slot dicatat lewat RPC increment_watch_bar_click
+   (fire-and-forget, tidak menunggu/mengganggu link yang dibuka), supaya dashboard
+   admin bisa menampilkan jumlah klik per slot. */
 function loadWatchLinkBar(){
   const watchBarEl = document.getElementById('watch-link-bar');
   if(!watchBarEl) return;
   sb.from('site_settings').select('*').eq('id', 1).single().then(({ data }) => {
-    renderLinkBar(watchBarEl, data, [['watch_bar1_nama','watch_bar1_link'],['watch_bar2_nama','watch_bar2_link'],['watch_bar3_nama','watch_bar3_link']]);
+    renderLinkBar(
+      watchBarEl, data,
+      [['watch_bar1_nama','watch_bar1_link'],['watch_bar2_nama','watch_bar2_link'],['watch_bar3_nama','watch_bar3_link']],
+      (slotNum) => { sb.rpc('increment_watch_bar_click', { bar_num: slotNum }).then(() => {}).catch(() => {}); }
+    );
   }).catch(() => {});
 }
 

@@ -360,15 +360,15 @@
         <p class="hint">Tampil di bawah tombol Buka Link/Unduh pada setiap halaman detail post. Ikon otomatis terdeteksi dari nama, misalnya "Tutorial PC", "Nonton TV", atau "Terbatas 18+". Kosongkan nama untuk sembunyikan slot.</p>
         <form id="watch-bars-form">
           <div class="grid-2" style="margin-bottom:6px;">
-            <div class="field"><label>Nama Slot 1</label><input type="text" id="watch_bar1_nama" placeholder="Contoh: Tutorial PC"></div>
+            <div class="field"><label>Nama Slot 1 <span id="watch_bar1_click_badge" style="font-family:'JetBrains Mono',monospace; font-weight:500; color:var(--teal); background:rgba(42,111,111,0.1); padding:2px 8px; border-radius:999px; margin-left:4px;">0 klik</span></label><input type="text" id="watch_bar1_nama" placeholder="Contoh: Tutorial PC"></div>
             <div class="field"><label>Link Slot 1</label><input type="url" id="watch_bar1_link"></div>
           </div>
           <div class="grid-2" style="margin-bottom:6px;">
-            <div class="field"><label>Nama Slot 2</label><input type="text" id="watch_bar2_nama" placeholder="Contoh: Tutorial TV"></div>
+            <div class="field"><label>Nama Slot 2 <span id="watch_bar2_click_badge" style="font-family:'JetBrains Mono',monospace; font-weight:500; color:var(--teal); background:rgba(42,111,111,0.1); padding:2px 8px; border-radius:999px; margin-left:4px;">0 klik</span></label><input type="text" id="watch_bar2_nama" placeholder="Contoh: Tutorial TV"></div>
             <div class="field"><label>Link Slot 2</label><input type="url" id="watch_bar2_link"></div>
           </div>
           <div class="grid-2" style="margin-bottom:6px;">
-            <div class="field"><label>Nama Slot 3</label><input type="text" id="watch_bar3_nama" placeholder="Contoh: Terbatas 18+"></div>
+            <div class="field"><label>Nama Slot 3 <span id="watch_bar3_click_badge" style="font-family:'JetBrains Mono',monospace; font-weight:500; color:var(--teal); background:rgba(42,111,111,0.1); padding:2px 8px; border-radius:999px; margin-left:4px;">0 klik</span></label><input type="text" id="watch_bar3_nama" placeholder="Contoh: Terbatas 18+"></div>
             <div class="field"><label>Link Slot 3</label><input type="url" id="watch_bar3_link"></div>
           </div>
           <button class="btn-primary" type="submit">Simpan link watch page</button>
@@ -527,6 +527,7 @@
     loadBars();
     loadFooter();
     loadFavicon();
+    subscribeRealtimeMonitoring();
   }
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -839,6 +840,14 @@
   }
 
   cropCloseBtn.onclick = () => closeCropModal(null);
+
+  // Tap di luar kartu modal (area backdrop gelap) = sama seperti klik tombol X:
+  // batalkan crop. Cek e.target === cropOverlay supaya klik di DALAM kartu
+  // (stage, chip rasio, slider, tombol) tidak ikut ke-trigger — cuma area
+  // kosong di luar kartu yang membatalkan.
+  cropOverlay.addEventListener("click", (e) => {
+    if (e.target === cropOverlay) closeCropModal(null);
+  });
 
   cropSwapBtn.onclick = () => cropSwapInput.click();
   cropSwapInput.addEventListener("change", () => {
@@ -1175,6 +1184,9 @@
               <div class="bar"><span class="bar-fill" style="width:${pct}%"></span></div>
               <span class="num">${views} dilihat</span>
             </div>
+            <div class="post-views" style="margin-top:3px;">
+              <span class="num">🔗 ${p.link_clicks || 0} klik link${p.link_download ? ` · ⬇ ${p.download_clicks || 0} klik unduh` : ''}</span>
+            </div>
           </div>
           <div class="row-actions">
             <button class="icon-btn" title="Bagikan" data-action="share"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg></button>
@@ -1271,6 +1283,16 @@
   });
 
   /* ---------- BAR HEADER SETTINGS ---------- */
+  // Update 3 badge jumlah klik slot watch page. Dipisah jadi fungsi sendiri supaya
+  // bisa dipanggil ulang oleh langganan realtime di bawah (updateWatchBarClickBadges)
+  // tanpa perlu fetch ulang seluruh form setiap kali ada klik baru dari pengunjung.
+  function updateWatchBarClickBadges(data){
+    if(!data) return;
+    [1,2,3].forEach(n => {
+      const el = document.getElementById(`watch_bar${n}_click_badge`);
+      if(el) el.textContent = `${data[`watch_bar${n}_clicks`] || 0} klik`;
+    });
+  }
   async function loadBars(){
     const { data } = await sb.from('site_settings').select('*').eq('id', 1).single();
     if(!data) return;
@@ -1282,6 +1304,7 @@
       const el = document.getElementById(key);
       if(el) el.value = data[key] || '';
     });
+    updateWatchBarClickBadges(data);
   }
   document.getElementById('bars-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1342,6 +1365,31 @@
     if(error){ status.textContent = 'Gagal menyimpan: ' + error.message; status.className = 'err'; }
     else { status.textContent = 'Tersimpan.'; status.className = 'ok'; showToast('Halaman footer diperbarui'); }
   });
+
+  /* ---------- MONITOR REALTIME: klik link/unduh per post & klik 3 slot watch bar ----------
+     Begitu ada pengunjung mana pun (di HP/browser lain) yang klik salah satu hal ini,
+     angkanya langsung berubah di dashboard admin tanpa perlu refresh manual — dengan
+     Supabase Realtime (postgres_changes), bukan polling.
+     CATATAN SETUP: fitur ini butuh Realtime diaktifkan untuk tabel "posts" dan
+     "site_settings" di Supabase (Database → Replication, centang kedua tabel itu).
+     Kalau belum diaktifkan, dashboard tetap berfungsi normal seperti biasa — angka
+     klik tetap akurat, hanya saja baru terlihat update setelah dashboard dibuka ulang
+     (loadPosts/loadBars), bukan otomatis real-time. */
+  let postsRealtimeDebounce = null;
+  function subscribeRealtimeMonitoring(){
+    sb.channel('admin-posts-clicks')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'posts' }, () => {
+        clearTimeout(postsRealtimeDebounce);
+        postsRealtimeDebounce = setTimeout(() => { loadPosts(); }, 600);
+      })
+      .subscribe();
+
+    sb.channel('admin-settings-clicks')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'id=eq.1' }, (payload) => {
+        updateWatchBarClickBadges(payload.new);
+      })
+      .subscribe();
+  }
 
   checkSession();
 </script>
