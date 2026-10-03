@@ -133,25 +133,37 @@
   }
 
   /* ---------- Klik "Buka Link" dan "Unduh" — dicatat setiap klik (tanpa cooldown,
-     beda dari views di atas), karena ini aksi sengaja pengunjung, bukan sekadar
-     membuka halaman. Fire-and-forget: tidak menunggu/menghalangi link terbuka. */
+     beda dari views di bawah), karena ini aksi sengaja pengunjung, bukan sekadar
+     membuka halaman. Fire-and-forget: tidak menunggu/menghalangi link terbuka.
+     Dilewati kalau browser ini sedang login sebagai admin (lihat isAdminSession
+     di app.js) — supaya admin cek/tes link sendiri tidak ikut kehitung. */
   function trackLinkClick(id){
-    sb.rpc('increment_link_click', { post_id: id }).then(() => {}).catch(() => {});
+    isAdminSession().then(isAdmin => {
+      if(isAdmin) return;
+      sb.rpc('increment_link_click', { post_id: id }).then(() => {}).catch(() => {});
+    });
   }
   function trackDownloadClick(id){
-    sb.rpc('increment_download_click', { post_id: id }).then(() => {}).catch(() => {});
+    isAdminSession().then(isAdmin => {
+      if(isAdmin) return;
+      sb.rpc('increment_download_click', { post_id: id }).then(() => {}).catch(() => {});
+    });
   }
 
-  /* ---------- View counter dengan cooldown 30 menit per post per browser ---------- */
+  /* ---------- View counter dengan cooldown 30 menit per post per browser ----------
+     Sama seperti klik di atas: dilewati kalau browser ini sedang login sebagai admin. */
   const VIEW_COOLDOWN_MS = 30 * 60 * 1000; // 30 menit
   function trackView(id){
-    try{
-      const key = 'yk_viewed_' + id;
-      const last = Number(localStorage.getItem(key) || 0);
-      if(Date.now() - last < VIEW_COOLDOWN_MS) return; // masih dalam masa cooldown, jangan hitung lagi
-      localStorage.setItem(key, String(Date.now()));
-    } catch(e){ /* localStorage diblokir — tetap hitung, lebih baik daripada gagal total */ }
-    sb.rpc('increment_views', { post_id: id }).then(() => {}).catch(() => {});
+    isAdminSession().then(isAdmin => {
+      if(isAdmin) return;
+      try{
+        const key = 'yk_viewed_' + id;
+        const last = Number(localStorage.getItem(key) || 0);
+        if(Date.now() - last < VIEW_COOLDOWN_MS) return; // masih dalam masa cooldown, jangan hitung lagi
+        localStorage.setItem(key, String(Date.now()));
+      } catch(e){ /* localStorage diblokir — tetap hitung, lebih baik daripada gagal total */ }
+      sb.rpc('increment_views', { post_id: id }).then(() => {}).catch(() => {});
+    });
   }
 
   async function loadRelated(currentId){

@@ -12,6 +12,15 @@ const BUCKET = 'foto-post';
 const SITE_NAME = 'Yakultind';
 const POSTS_PER_PAGE = 12;
 
+/* ---------- Deteksi apakah browser ini sedang login sebagai admin ----------
+   Dipakai supaya aktivitas admin sendiri (buka post untuk cek tampilan, klik
+   link untuk tes, dsb) TIDAK ikut tercatat sebagai views/klik pengunjung.
+   Semua jenis tracking (views, klik link utama, klik link download, klik 3
+   slot link bar watch page) mengecek ini dulu sebelum mengirim RPC. ---------- */
+function isAdminSession(){
+  return sb.auth.getSession().then(({ data }) => !!(data && data.session)).catch(() => false);
+}
+
 /* ---------- Util ---------- */
 function escapeHtml(str){
   return (str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -185,7 +194,12 @@ function loadWatchLinkBar(){
     renderLinkBar(
       watchBarEl, data,
       [['watch_bar1_nama','watch_bar1_link'],['watch_bar2_nama','watch_bar2_link'],['watch_bar3_nama','watch_bar3_link']],
-      (slotNum) => { sb.rpc('increment_watch_bar_click', { bar_num: slotNum }).then(() => {}).catch(() => {}); }
+      (slotNum) => {
+        isAdminSession().then(isAdmin => {
+          if(isAdmin) return;
+          sb.rpc('increment_watch_bar_click', { bar_num: slotNum }).then(() => {}).catch(() => {});
+        });
+      }
     );
   }).catch(() => {});
 }
