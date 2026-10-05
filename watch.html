@@ -121,8 +121,8 @@
         `<a class="watch-tag" href="/?search=${encodeURIComponent(t)}">#${escapeHtml(t)}</a>`
       ).join('')}</div>` : ''}
       <div class="watch-actions">
-        <a class="btn-pill" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer" onclick="trackLinkClick('${post.id}')">${window.t ? t('buka_link') : 'Buka Link'}</a>
-        ${post.link_download ? `<a class="btn-pill ghost" href="${escapeHtml(post.link_download)}" target="_blank" rel="noopener noreferrer" onclick="trackDownloadClick('${post.id}')">${window.t ? t('unduh') : 'Unduh'}</a>` : ''}
+        <a class="btn-pill" href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer" onclick="trackLinkClick('${post.id}')">${window.t ? t('buka_link') : 'Buka Link Utama'}</a>
+        ${post.link_download ? `<a class="btn-pill ghost" href="${escapeHtml(post.link_download)}" target="_blank" rel="noopener noreferrer" onclick="trackDownloadClick('${post.id}')">${window.t ? t('unduh') : 'Download (Terabox)'}</a>` : ''}
       </div>
       <div class="bar-slots watch-link-bar" id="watch-link-bar" style="padding-left:0; padding-right:0;"></div>
     `;
@@ -132,11 +132,11 @@
     loadRelated(post.id);
   }
 
-  /* ---------- Klik "Buka Link" dan "Unduh" — dicatat setiap klik (tanpa cooldown,
-     beda dari views di bawah), karena ini aksi sengaja pengunjung, bukan sekadar
-     membuka halaman. Fire-and-forget: tidak menunggu/menghalangi link terbuka.
-     Dilewati kalau browser ini sedang login sebagai admin (lihat isAdminSession
-     di app.js) — supaya admin cek/tes link sendiri tidak ikut kehitung. */
+  /* ---------- Klik "Buka Link Utama" dan "Download (Terabox)" — dicatat setiap klik
+     (tanpa cooldown, beda dari views di bawah), karena ini aksi sengaja pengunjung,
+     bukan sekadar membuka halaman. Fire-and-forget: tidak menunggu/menghalangi link
+     terbuka. Dilewati kalau browser ini sedang login sebagai admin (lihat
+     isAdminSession di app.js) — supaya admin cek/tes link sendiri tidak ikut kehitung. */
   function trackLinkClick(id){
     isAdminSession().then(isAdmin => {
       if(isAdmin) return;
