@@ -272,12 +272,12 @@
           </div>
           <div class="grid-2">
             <div class="field">
-              <label for="link-input">Link</label>
-              <input type="url" id="link-input" required placeholder="https://…">
+              <label for="link-input">Link Utama</label>
+              <input type="url" id="link-input" required placeholder="https://shortlink.co/... (data lengkap)">
             </div>
             <div class="field">
-              <label for="download-input">Link download (opsional)</label>
-              <input type="url" id="download-input" placeholder="https://… (boleh kosong)">
+              <label for="download-input">Link Download (Terabox)</label>
+              <input type="url" id="download-input" placeholder="https://terabox.com/s/... (opsional, kadang file dihapus)">
             </div>
           </div>
           <div style="display:flex; gap:10px;">
@@ -1185,7 +1185,7 @@
               <span class="num">${views} dilihat</span>
             </div>
             <div class="post-views" style="margin-top:3px;">
-              <span class="num">🔗 ${p.link_clicks || 0} klik link${p.link_download ? ` · ⬇ ${p.download_clicks || 0} klik unduh` : ''}</span>
+              <span class="num">🔗 ${p.link_clicks || 0} klik Link Utama${p.link_download ? ` · ⬇ ${p.download_clicks || 0} klik Download (Terabox)` : ''}</span>
             </div>
           </div>
           <div class="row-actions">
