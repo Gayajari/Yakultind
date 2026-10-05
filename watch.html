@@ -110,7 +110,7 @@
 
     main.innerHTML = `
       <div class="watch-gallery">
-        ${photos.map((url, i) => `<img src="${url}" alt="${escapeHtml(post.judul)}" loading="${i === 0 ? 'eager' : 'lazy'}" onclick="openLightbox('${url}')">`).join('')}
+        ${photos.map((url, i) => `<img src="${url}" alt="${escapeHtml(post.judul)}" loading="${i === 0 ? 'eager' : 'lazy'}" onclick="openLightbox('${url}'); trackView('${post.id}')">`).join('')}
       </div>
       <span class="watch-cat">${escapeHtml(post.kategori || 'Umum')}</span>
       <h1>${escapeHtml(post.judul)}</h1>
@@ -151,7 +151,11 @@
   }
 
   /* ---------- View counter dengan cooldown 30 menit per post per browser ----------
-     Sama seperti klik di atas: dilewati kalau browser ini sedang login sebagai admin. */
+     Sama seperti klik di atas: dilewati kalau browser ini sedang login sebagai admin.
+     Dipanggil dua tempat: (1) otomatis saat halaman post pertama kali dimuat, dan
+     (2) saat pengunjung klik salah satu foto untuk dibuka di lightbox — keduanya
+     tetap tunduk pada cooldown yang sama di bawah ini, jadi klik foto yang terjadi
+     tak lama setelah page-load (masih dalam 30 menit) sengaja TIDAK dihitung dobel. */
   const VIEW_COOLDOWN_MS = 30 * 60 * 1000; // 30 menit
   function trackView(id){
     isAdminSession().then(isAdmin => {
@@ -215,4 +219,3 @@
 <div id="ad-sticky-mount"></div>
 </body>
 </html>
-
